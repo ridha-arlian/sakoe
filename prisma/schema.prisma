@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum DonationStatus {
+  pending
+  paid
+  expired
+  failed
+  cancelled
+  refunded
+}
+
+model Donation {
+  id                     String          @id @default(uuid())
+  orderId                String          @unique @map("order_id")
+  midtransTransactionId  String?         @map("midtrans_transaction_id")
+  amount                 BigInt
+  donorName              String?         @map("donor_name")
+  isAnonymous            Boolean         @default(false) @map("is_anonymous")
+  message                String?
+  paymentMethod          String?         @map("payment_method")
+  status                 DonationStatus  @default(pending)
+  paidAt                 DateTime?       @map("paid_at")
+  createdAt              DateTime        @default(now()) @map("created_at")
+  updatedAt              DateTime        @updatedAt @map("updated_at")
+  rawNotification        Json?           @map("raw_notification")
+  signatureVerified      Boolean         @default(false) @map("signature_verified")
+
+  @@index([status])
+  @@map("donations")
+}

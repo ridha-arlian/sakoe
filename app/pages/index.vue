@@ -1,16 +1,18 @@
-<template>
-  <main class="min-h-screen bg-background">
+<script setup lang="ts">
+  import ModeToggle from "@/components/ui/ModeToggle.vue";
+</script>
+
+<template>  
+  <main class="min-h-screen bg-background text-foreground transition-colors duration-300 relative scrollbar-hide overflow-y-auto h-screen">
+    <div class="absolute top-4 right-4 z-50">
+      <ModeToggle />
+    </div>
     <div class="max-w-xl mx-auto">
-      <hero />
-      <!-- <Separator />
-      <GoalsSection />
-      <Separator />
-      <LeaderboardSection />
-      <Separator />
-      <RecentSection />
-      <footer class="py-8 text-center text-xs text-muted-foreground">
-        Dibuat dengan ❤️ oleh CodeBrew · Powered by kopi &amp; semangat belajar
-      </footer> -->
+      <section class="relative flex flex-col items-center text-center px-6 pt-16 pb-12 overflow-hidden">
+        <profileBanner />
+        <statsRow />
+        <donationCard />
+      </section>
     </div>
   </main>
 </template>
