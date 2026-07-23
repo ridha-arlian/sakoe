@@ -4,7 +4,7 @@
   import { Input } from "@/components/ui/input";
   import { Textarea } from "@/components/ui/textarea";
   import { Card } from "@/components/ui/card";
-  import { Heart, ShieldCheck, Plus, Minus } from "@lucide/vue";
+  import { Heart, ShieldCheck, Plus, Minus, Loader2 } from "@lucide/vue";
   import { Checkbox } from "@/components/ui/checkbox";
   import { NumberField, NumberFieldContent, NumberFieldInput } from "@/components/ui/number-field";
 
@@ -13,6 +13,8 @@
   const donorName   = ref("");
   const message     = ref("");
   const isAnonymous = ref(false);
+  const isLoading   = ref(false);
+  const errorMsg    = ref("");
 
   const presets = [
     { label: "Rp 10k", value: 10000 },
@@ -30,31 +32,16 @@
   }
 
   function increment100() {
-    const current = amount.value || 0;
-    amount.value = current + 100;
+    amount.value = (amount.value || 0) + 100;
   }
 
   function decrement100() {
-    const current = amount.value || 0;
-    if (current - 100 >= MIN_AMOUNT) {
-      amount.value = current - 100;
-    } else {
-      amount.value = MIN_AMOUNT;
-    }
-  }
-
-  function handleInput(e: Event) {
-    const target = e.target as HTMLInputElement;
-    const rawVal = target.value.replace(/\D/g, "");
-    amount.value = rawVal ? Number(rawVal) : undefined;
+    const next = (amount.value || 0) - 100;
+    amount.value = next >= MIN_AMOUNT ? next : MIN_AMOUNT;
   }
 
   watch(isAnonymous, (newVal) => {
-    if (newVal) {
-      donorName.value = "Anonim";
-    } else {
-      donorName.value = "";
-    }
+    donorName.value = newVal ? "Anonim" : "";
   });
 
   const formattedJumlah = computed(() => {
@@ -65,6 +52,21 @@
       maximumFractionDigits: 0,
     }).format(amount.value);
   });
+
+  async function handleDonate() {
+    if (!isAmountValid.value || isLoading.value) return;
+
+    isLoading.value = true;
+
+    await navigateTo({
+      path: "/snap",
+      query: {
+        amount: amount.value,
+        donorName: donorName.value,
+        message: message.value,
+      },
+    });
+  }
 </script>
 
 <template>
@@ -82,8 +84,8 @@
           :key="preset.value"
           type="button"
           variant="outline"
-          class="font-inter text-xs h-8.5 transition-colors px-0 w-full"
-          :class="{ 'border-primary bg-primary/10 text-primary font-medium': amount === preset.value }"
+          class="font-inter font-semibold text-xs h-8.5 transition-colors px-0 w-full"
+          :class="{ 'border-primary bg-primary/10 text-primary font-inter font-semibold text-xs': amount === preset.value }"
           @click="setPreset(preset.value)"
         >
           {{ preset.label }}
@@ -118,8 +120,7 @@
 
             <NumberFieldInput
               placeholder="Masukkan nominal..."
-              class="font-inter text-center h-9 text-sm"
-              @input="handleInput"
+              class="font-inter font-semibold text-center h-9 text-sm"
             />
 
             <Button
@@ -136,7 +137,7 @@
 
         <div class="flex items-center justify-between mt-1.5 px-0.5 font-inter text-xs">
           <p class="text-muted-foreground">
-            Jumlah: <span class="font-inter font-medium text-foreground">{{ formattedJumlah }}</span>
+            Jumlah: <span class="font-inter font-semibold text-xs text-foreground">{{ formattedJumlah }}</span>
           </p>
 
           <p v-if="!isAmountValid" class="font-inter text-destructive font-medium text-[11px]">
@@ -161,7 +162,7 @@
           v-model="message"
           placeholder="Tulis ucapan/dukungan (opsional)..."
           maxlength="200"
-          class="font-inter text-sm min-h-20 pb-6 resize-none bg-background border-border"
+          class="font-inter text-sm min-h-20 pb-6 resize-y bg-background border-border"
         />
         <span class="absolute bottom-2 right-2.5 font-inter text-[10px] text-muted-foreground pointer-events-none select-none bg-background/80 px-1 rounded">
           {{ message.length }}/200
@@ -179,12 +180,18 @@
     </div>
 
     <div class="flex flex-col gap-2.5 pt-1">
-      <Button 
-        :disabled="!isAmountValid"
+      <p v-if="errorMsg" class="font-inter text-center text-[12px] text-destructive">
+        {{ errorMsg }}
+      </p>
+
+      <Button
+        :disabled="!isAmountValid || isLoading"
         class="font-inter w-full h-10 text-sm font-medium gap-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="handleDonate"
       >
-        <Heart class="w-4 h-4" />
-        Traktir sekarang
+        <Loader2 v-if="isLoading" class="w-4 h-4 animate-spin" />
+        <Heart v-else class="w-4 h-4" />
+        {{ isLoading ? "Mengalihkan..." : "Traktir sekarang" }}
       </Button>
 
       <p class="font-inter text-center text-[11px] text-muted-foreground flex items-center justify-center gap-1">
