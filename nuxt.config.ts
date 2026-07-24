@@ -9,7 +9,12 @@ export default defineNuxtConfig({
       tailwindcss(),
     ],
   },
-  modules: ['shadcn-nuxt', '@nuxt/eslint', '@nuxt/fonts', '@nuxtjs/color-mode'],
+  modules: [
+    'shadcn-nuxt',
+    '@nuxt/eslint',
+    '@nuxt/fonts',
+    '@nuxtjs/color-mode',
+  ],
   shadcn: {
     prefix: '',
     componentDir: '@/components/ui'
@@ -24,11 +29,10 @@ export default defineNuxtConfig({
     ]
   },
   runtimeConfig: {
-    "midtransServerSandbox": process.env.MIDTRANS_SERVER_KEY_SANDBOX,
-    "midtransClientSandbox": process.env.MIDTRANS_CLIENT_KEY_SANDBOX,
+    "midtransServerKey": process.env.MIDTRANS_SERVER_KEY,
     public: {
-      "midtransClientSandbox": process.env.MIDTRANS_CLIENT_KEY_SANDBOX,
-      "midtransClient": process.env.MIDTRANS_CLIENT_KEY,
+      "midtransClientKey": process.env.MIDTRANS_CLIENT_KEY,
+      "midtransSnapUrl": process.env.MIDTRANS_SNAP_URL
     }
   },
 })
