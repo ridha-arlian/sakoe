@@ -12,7 +12,7 @@
       type="button"
       variant="outline"
       class="font-inter font-semibold text-xs h-8.5 transition-colors px-0 w-full"
-      :class="{ "border-primary bg-primary/10 text-primary font-inter font-semibold text-xs": amount === preset.value }"
+      :class="{ 'border-primary bg-primary/10 text-primary font-inter font-semibold text-xs': amount === preset.value }"
       @click="amount = preset.value"
     >
       {{ preset.label }}

@@ -44,11 +44,18 @@
     </div>
 
     <div class="w-full max-w-md rounded-2xl border border-border bg-card shadow-sm p-4 text-center">
-      <Button as-child class="w-full" variant="outline" :disabled="isCancelling">
+      <!-- <Button as-child class="w-full" variant="outline" :disabled="isCancelling">
         <NuxtLink to="/" @click="handleCancelClick">
           <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin mr-2" />
           {{ isCancelling ? "Cancelling..." : "Cancel payment" }}
         </NuxtLink>
+      </Button> -->
+      <Button class="w-full" variant="outline"
+        :disabled="isCancelling"
+        @click="handleCancelClick"
+      >
+        <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin mr-2" />
+        {{ isCancelling ? "Cancelling..." : "Cancel payment" }}
       </Button>
     </div>
   </div>

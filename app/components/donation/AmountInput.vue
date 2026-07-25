@@ -26,9 +26,9 @@
       :min="MIN_AMOUNT"
       :step="1"
       :format-options="{
-        style: "currency",
-        currency: "IDR",
-        currencyDisplay: "narrowSymbol",
+        style: 'currency',
+        currency: 'IDR',
+        currencyDisplay: 'narrowSymbol',
         maximumFractionDigits: 0,
       }"
     >
@@ -39,7 +39,7 @@
           size="icon"
           class="h-9 w-9 shrink-0 border-border"
           :disabled="amount !== undefined && amount <= MIN_AMOUNT"
-          @click="emit("decrement")"
+          @click="emit('decrement')"
         >
           <Minus class="h-3.5 w-3.5" />
         </Button>
@@ -54,7 +54,7 @@
           variant="outline"
           size="icon"
           class="h-9 w-9 shrink-0 border-border"
-          @click="emit("increment")"
+          @click="emit('increment')"
         >
           <Plus class="h-3.5 w-3.5" />
         </Button>

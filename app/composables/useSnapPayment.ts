@@ -141,9 +141,7 @@ export function useSnapPayment(payload: DonationPayload) {
     await performCancel();
   }
 
-  async function handleCancelClick(e: Event) {
-    e.preventDefault();
-
+  async function handleCancelClick() {
     if (isCancelling.value) return;
 
     if (!currentOrderId.value) {
