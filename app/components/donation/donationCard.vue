@@ -1,20 +1,22 @@
 <script setup lang="ts">
-  import { ref } from "vue";
-  import { Button } from "@/components/ui/button";
+  import { ref, computed } from "vue";
   import { Card } from "@/components/ui/card";
+  import { Button } from "@/components/ui/button";
   import { Heart, ShieldCheck, Loader2 } from "@lucide/vue";
-  import { useDonationAmount } from "@/composables/useDonationAmount";
-  import AmountPresets from "@/components/donation/AmountPresets.vue";
-  import AmountInput from "@/components/donation/AmountInput.vue";
-  import DonorInfoForm from "@/components/donation/DonorInfoForm.vue";
+  import AmountInput from "./AmountInput.vue";
+  import AmountPresets from "./AmountPresets.vue";
+  import DonorInfoForm from "./DonorInfoForm.vue";
 
-  const { amount, isAmountValid, formattedAmount, incrementAmount, decrementAmount } = useDonationAmount();
+  const MIN_AMOUNT = 10000;
 
-  const donorName = ref("");
-  const message = ref("");
+  const amount      = ref<number | undefined>(MIN_AMOUNT);
+  const donorName   = ref("");
+  const message     = ref("");
   const isAnonymous = ref(false);
-  const isLoading = ref(false);
-  const errorMsg = ref("");
+  const isLoading   = ref(false);
+  const errorMsg    = ref("");
+
+  const isAmountValid = computed(() => amount.value !== undefined && amount.value >= MIN_AMOUNT);
 
   async function handleDonate() {
     if (!isAmountValid.value || isLoading.value) return;
@@ -41,21 +43,13 @@
       </h2>
     </div>
 
-    <div class="flex flex-col gap-2.5">
-      <AmountPresets v-model:amount="amount" />
-      <AmountInput
-        v-model:amount="amount"
-        :is-amount-valid="isAmountValid"
-        :formatted-amount="formattedAmount"
-        @increment="incrementAmount"
-        @decrement="decrementAmount"
-      />
-    </div>
+    <AmountPresets v-model="amount" />
+    <AmountInput ref="numberInputRef" v-model="amount" />
 
     <DonorInfoForm
-      v-model:donor-name="donorName"
+      v-model:donorName="donorName"
       v-model:message="message"
-      v-model:is-anonymous="isAnonymous"
+      v-model:isAnonymous="isAnonymous"
     />
 
     <div class="flex flex-col gap-2.5 pt-1">

@@ -1,7 +1,12 @@
 <script setup lang="ts">
   import { Button } from "@/components/ui/button";
+  import { AMOUNT_PRESETS } from "@/utils/donation";
 
-  const amount = defineModel<number | undefined>("amount");
+  const amount = defineModel<number | undefined>({ required: true });
+
+  function setPreset(val: number) {
+    amount.value = val;
+  }
 </script>
 
 <template>
@@ -13,7 +18,7 @@
       variant="outline"
       class="font-inter font-semibold text-xs h-8.5 transition-colors px-0 w-full"
       :class="{ 'border-primary bg-primary/10 text-primary font-inter font-semibold text-xs': amount === preset.value }"
-      @click="amount = preset.value"
+      @click="setPreset(preset.value)"
     >
       {{ preset.label }}
     </Button>

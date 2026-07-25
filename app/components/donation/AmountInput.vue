@@ -1,20 +1,35 @@
 <script setup lang="ts">
+  import { computed } from "vue";
   import { Button } from "@/components/ui/button";
-  import { Minus, Plus } from "@lucide/vue";
+  import { Plus, Minus } from "@lucide/vue";
   import { NumberField, NumberFieldContent, NumberFieldInput } from "@/components/ui/number-field";
+  import { MIN_AMOUNT } from "@/utils/donation";
+  import { formatIDR } from "@/utils/currency";
 
-  const amount = defineModel<number | undefined>("amount");
+  const amount = defineModel<number | undefined>({ required: true });
 
-  defineProps<{
-    isAmountValid: boolean;
-    formattedAmount: string;
-  }>();
+  const isAmountValid = computed(() => amount.value !== undefined && amount.value >= MIN_AMOUNT);
 
-  const emit = defineEmits<{
-    increment: [];
-    decrement: [];
-  }>();
+  function increment100() {
+    amount.value = (amount.value || 0) + 100;
+  }
 
+  function decrement100() {
+    const next = (amount.value || 0) - 100;
+    amount.value = next >= MIN_AMOUNT ? next : MIN_AMOUNT;
+  }
+
+  function handleInput(e: Event) {
+    const target = e.target as HTMLInputElement;
+    const rawVal = target.value.replace(/\D/g, "");
+    amount.value = rawVal ? Number(rawVal) : undefined;
+  }
+
+  const formattedAmount = computed(() => {
+    return amount.value ? formatIDR(amount.value) : "Rp 0";
+  });
+
+  defineExpose({ isAmountValid });
 </script>
 
 <template>
@@ -39,7 +54,7 @@
           size="icon"
           class="h-9 w-9 shrink-0 border-border"
           :disabled="amount !== undefined && amount <= MIN_AMOUNT"
-          @click="emit('decrement')"
+          @click="decrement100"
         >
           <Minus class="h-3.5 w-3.5" />
         </Button>
@@ -47,6 +62,7 @@
         <NumberFieldInput
           placeholder="Enter amount..."
           class="font-inter font-semibold text-center h-9 text-sm"
+          @input="handleInput"
         />
 
         <Button
@@ -54,7 +70,7 @@
           variant="outline"
           size="icon"
           class="h-9 w-9 shrink-0 border-border"
-          @click="emit('increment')"
+          @click="increment100"
         >
           <Plus class="h-3.5 w-3.5" />
         </Button>

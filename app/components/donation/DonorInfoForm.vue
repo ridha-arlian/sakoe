@@ -4,8 +4,8 @@
   import { Textarea } from "@/components/ui/textarea";
   import { Checkbox } from "@/components/ui/checkbox";
 
-  const donorName = defineModel<string>("donorName", { required: true });
-  const message = defineModel<string>("message", { required: true });
+  const donorName   = defineModel<string>("donorName", { required: true });
+  const message     = defineModel<string>("message", { required: true });
   const isAnonymous = defineModel<boolean>("isAnonymous", { required: true });
 
   watch(isAnonymous, (newVal) => {
