@@ -1,3 +1,5 @@
+import crypto from 'crypto'
+
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const body = await readBody(event)
@@ -7,7 +9,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const serverKey = config.midtransServerKey
-  const orderId = `s-koe-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+  const orderId = `sakoe-${crypto.randomBytes(6).toString('hex')}`
   const authHeader = `Basic ${Buffer.from(`${serverKey}:`).toString('base64')}`
 
   const payload = {

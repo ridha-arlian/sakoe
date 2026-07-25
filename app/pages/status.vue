@@ -1,4 +1,3 @@
-<!-- pages/status.vue -->
 <script setup lang="ts">
 import { Loader2 } from "@lucide/vue";
 
@@ -14,7 +13,6 @@ interface DonationStatus {
 
 const route = useRoute();
 
-// 1. Ambil order_id secara reactive dari query URL
 const orderId = computed(() => (route.query.order_id as string) || "");
 
 const isLoading = ref(true);
@@ -160,7 +158,6 @@ function copyOrderId() {
   }
 }
 
-// 2. Gunakan watch dengan immediate: true agar otomatis jalan saat komponen terpasang
 watch(
   orderId,
   (newId) => {
@@ -184,13 +181,11 @@ onUnmounted(() => {
     <div class="w-full max-w-md">
       <div class="rounded-2xl border border-border bg-card shadow-sm p-8 flex flex-col items-center text-center">
         
-        <!-- 1. State Loading -->
         <div v-if="isLoading" class="py-10 flex flex-col items-center gap-3">
           <Loader2 class="w-6 h-6 animate-spin text-primary" />
           <p class="font-inter text-sm text-muted-foreground">Mengecek status transaksi...</p>
         </div>
 
-        <!-- 2. State Error -->
         <div v-else-if="errorMsg" class="w-full flex flex-col items-center">
           <div class="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -204,7 +199,6 @@ onUnmounted(() => {
           </NuxtLink>
         </div>
 
-        <!-- 3. State Sukses Memuat Data -->
         <div v-else-if="data && view" class="w-full flex flex-col items-center">
           <div class="h-16 w-16 rounded-full flex items-center justify-center mb-4" :class="view.iconClass">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -248,7 +242,6 @@ onUnmounted(() => {
           </NuxtLink>
         </div>
 
-        <!-- 4. Fallback jika tidak masuk kondisi di atas -->
         <div v-else class="py-6">
           <p class="text-sm text-muted-foreground">Data transaksi tidak dapat ditampilkan.</p>
         </div>

@@ -2,19 +2,22 @@
 import { Loader2 } from "@lucide/vue";
 import { Button } from "@/components/ui/button";
 
-const route = useRoute();
 const config = useRuntimeConfig();
 
 const isLoading = ref(true);
+const isEmbedRendering = ref(false);
+const isCancelling = ref(false);
 const errorMsg = ref("");
 const hasInitialized = ref(false);
 const currentOrderId = ref("");
-
 const isCompletedOrRedirecting = ref(false);
 
-const amount = Number(route.query.amount) || 0;
-const donorName = (route.query.donorName as string) || "";
-const message = (route.query.message as string) || "";
+const form = useDonationForm();
+
+const amount = form.value?.amount ?? 0;
+const donorName = form.value?.donorName ?? "";
+const message = form.value?.message ?? "";
+const isAnonymous = form.value?.isAnonymous ?? false;
 
 const formattedAmount = computed(() =>
   new Intl.NumberFormat("id-ID", {
@@ -23,6 +26,36 @@ const formattedAmount = computed(() =>
     maximumFractionDigits: 0,
   }).format(amount)
 );
+
+let observer: MutationObserver | null = null;
+
+function watchIframeLoad() {
+  const container = document.getElementById("snap-container");
+  if (!container) return;
+
+  isEmbedRendering.value = true;
+
+  observer = new MutationObserver(() => {
+    const iframe = container.querySelector("iframe");
+    if (iframe) {
+      iframe.addEventListener(
+        "load",
+        () => {
+          isEmbedRendering.value = false;
+        },
+        { once: true }
+      );
+      setTimeout(() => {
+        isEmbedRendering.value = false;
+      }, 4000);
+
+      observer?.disconnect();
+      observer = null;
+    }
+  });
+
+  observer.observe(container, { childList: true });
+}
 
 function loadSnapScript(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -43,16 +76,18 @@ function closeSnap() {
   }
 }
 
-function handleRedirectToStatus() {
+function redirectToStatus() {
   if (!currentOrderId.value) return;
-  
-  isCompletedOrRedirecting.value = true;
-  closeSnap();
-
   navigateTo({
     path: "/status",
     query: { order_id: currentOrderId.value },
   });
+}
+
+function handleRedirectToStatus() {
+  isCompletedOrRedirecting.value = true;
+  closeSnap();
+  redirectToStatus();
 }
 
 async function initPayment() {
@@ -70,12 +105,14 @@ async function initPayment() {
 
     const { token, orderId } = await $fetch<{ token: string; orderId: string }>("/api/donation", {
       method: "POST",
-      body: { amount, donorName, message },
+      body: { amount, donorName, message, isAnonymous },
     });
 
     currentOrderId.value = orderId;
     isLoading.value = false;
     await nextTick();
+
+    watchIframeLoad();
 
     window.snap.embed(token, {
       embedId: "snap-container",
@@ -98,11 +135,8 @@ async function initPayment() {
   }
 }
 
-async function cancelTransaction() {
-  if (isCompletedOrRedirecting.value || !currentOrderId.value) return;
-
+async function performCancel() {
   closeSnap();
-
   try {
     await $fetch("/api/cancel", {
       method: "POST",
@@ -113,12 +147,37 @@ async function cancelTransaction() {
   }
 }
 
+async function cancelTransaction() {
+  if (isCompletedOrRedirecting.value || !currentOrderId.value) return;
+  await performCancel();
+}
+
+async function handleCancelClick(e: Event) {
+  e.preventDefault();
+
+  if (isCancelling.value) return;
+
+  if (!currentOrderId.value) {
+    navigateTo("/");
+    return;
+  }
+
+  isCancelling.value = true;
+  isCompletedOrRedirecting.value = true;
+  await performCancel();
+  redirectToStatus();
+}
+
 onBeforeRouteLeave(() => {
   cancelTransaction();
 });
 
 onMounted(() => {
   initPayment();
+});
+
+onUnmounted(() => {
+  observer?.disconnect();
 });
 </script>
 
@@ -138,12 +197,22 @@ onMounted(() => {
       {{ errorMsg }}
     </p>
 
-    <div id="snap-container" class="snap-embed-container" />
+    <div v-if="!isLoading && !errorMsg" class="relative w-full max-w-md" style="min-height: 600px;">
+      <div
+        v-if="isEmbedRendering"
+        class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/80 backdrop-blur-sm rounded-xl"
+      >
+        <Loader2 class="w-6 h-6 animate-spin text-primary" />
+        <p class="font-inter text-sm text-muted-foreground">Membuka jendela pembayaran...</p>
+      </div>
+      <div id="snap-container" class="snap-embed-container" />
+    </div>
 
     <div class="w-full max-w-md rounded-2xl border border-border bg-card shadow-sm p-4 text-center">
-      <Button as-child class="w-full" variant="outline">
-        <NuxtLink to="/" @click="cancelTransaction">
-          Batalkan dan kembali ke beranda
+      <Button as-child class="w-full" variant="outline" :disabled="isCancelling">
+        <NuxtLink to="/" @click="handleCancelClick">
+          <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin mr-2" />
+          {{ isCancelling ? "Membatalkan..." : "Batalkan pembayaran" }}
         </NuxtLink>
       </Button>
     </div>

@@ -52,20 +52,20 @@
       maximumFractionDigits: 0,
     }).format(amount.value);
   });
-
   async function handleDonate() {
     if (!isAmountValid.value || isLoading.value) return;
 
     isLoading.value = true;
 
-    await navigateTo({
-      path: "/snap",
-      query: {
-        amount: amount.value,
-        donorName: donorName.value,
-        message: message.value,
-      },
-    });
+    const form = useDonationForm();
+    form.value = {
+      amount: amount.value!,
+      donorName: donorName.value,
+      message: message.value,
+      isAnonymous: isAnonymous.value,
+    };
+
+    await navigateTo("/snap");
   }
 </script>
 
