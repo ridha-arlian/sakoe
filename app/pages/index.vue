@@ -1,7 +1,3 @@
-<script setup lang="ts">
-  import ModeToggle from "@/components/ui/ModeToggle.vue";
-</script>
-
 <template>  
   <main class="min-h-screen bg-background text-foreground transition-colors duration-300 relative scrollbar-hide overflow-y-auto h-screen">
     <div class="absolute top-4 right-4 z-50">

@@ -1,4 +1,4 @@
-import crypto from 'crypto'
+import crypto from "crypto";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -7,22 +7,22 @@ export default defineEventHandler(async (event) => {
   const { order_id, status_code, gross_amount, signature_key, transaction_status, transaction_id, payment_type, fraud_status } = body
 
   const expectedSignature = crypto
-    .createHash('sha512')
+    .createHash("sha512")
     .update(`${order_id}${status_code}${gross_amount}${config.midtransServerKey}`)
-    .digest('hex')
+    .digest("hex")
 
   if (signature_key !== expectedSignature) {
-    throw createError({ statusCode: 403, statusMessage: 'Invalid signature' })
+    throw createError({ statusCode: 403, statusMessage: "Invalid signature" })
   }
 
-  let status: 'pending' | 'paid' | 'expired' | 'failed' | 'cancelled' = 'pending'
+  let status: "pending" | "paid" | "expired" | "failed" | "cancelled" = "pending"
 
-  if (transaction_status === 'capture' || transaction_status === 'settlement') {
-    status = fraud_status === 'accept' || !fraud_status ? 'paid' : 'failed'
-  } else if (transaction_status === 'expire') {
-    status = 'expired'
-  } else if (transaction_status === 'cancel' || transaction_status === 'deny') {
-    status = 'cancelled'
+  if (transaction_status === "capture" || transaction_status === "settlement") {
+    status = fraud_status === "accept" || !fraud_status ? "paid" : "failed"
+  } else if (transaction_status === "expire") {
+    status = "expired"
+  } else if (transaction_status === "cancel" || transaction_status === "deny") {
+    status = "cancelled"
   }
 
   try {
@@ -32,17 +32,17 @@ export default defineEventHandler(async (event) => {
         status,
         paymentMethod: payment_type,
         midtransTransactionId: transaction_id,
-        paidAt: status === 'paid' ? new Date() : undefined,
+        paidAt: status === "paid" ? new Date() : undefined,
         rawNotification: body,
         signatureVerified: true,
       },
     })
   } catch (err: any) {
-    if (err?.code === 'P2025') {
-      throw createError({ statusCode: 404, statusMessage: 'Order ID tidak ditemukan' })
+    if (err?.code === "P2025") {
+      throw createError({ statusCode: 404, statusMessage: "Order ID not found" })
     }
     throw err
   }
 
-  return { message: 'OK' }
+  return { message: "OK" }
 })

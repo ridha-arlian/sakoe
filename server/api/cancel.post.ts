@@ -3,14 +3,12 @@ export default defineEventHandler(async (event) => {
   const orderId = body.orderId as string;
 
   if (!orderId) {
-    throw createError({ statusCode: 400, statusMessage: "orderId wajib diisi." });
+    throw createError({ statusCode: 400, statusMessage: "orderId is required." });
   }
 
   const config = useRuntimeConfig();
   const isProduction = config.midtransIsProduction === "true";
-  const baseUrl = isProduction
-    ? "https://api.midtrans.com"
-    : "https://api.sandbox.midtrans.com";
+  const baseUrl = isProduction ? "https://api.midtrans.com" : "https://api.sandbox.midtrans.com";
 
   const authHeader = `Basic ${Buffer.from(`${config.midtransServerKey}:`).toString("base64")}`;
 
@@ -19,11 +17,11 @@ export default defineEventHandler(async (event) => {
   });
 
   if (!donation) {
-    throw createError({ statusCode: 404, statusMessage: "Transaksi tidak ditemukan." });
+    throw createError({ statusCode: 404, statusMessage: "Transaction not found." });
   }
 
   if (donation.status === "paid") {
-    throw createError({ statusCode: 400, statusMessage: "Transaksi yang sudah dibayar tidak dapat dibatalkan." });
+    throw createError({ statusCode: 400, statusMessage: "A paid transaction cannot be cancelled." });
   }
 
   try {

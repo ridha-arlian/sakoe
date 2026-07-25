@@ -1,21 +1,21 @@
-import type { DonationStatus } from '../../generated/prisma/client'
+import type { DonationStatus } from "../../generated/prisma/client";
 
 export default defineEventHandler(async (event) => {
   const orderId = getQuery(event).order_id as string
 
   if (!orderId) {
-    throw createError({ statusCode: 400, statusMessage: "order_id wajib diisi." })
+    throw createError({ statusCode: 400, statusMessage: "order_id is required." })
   }
 
   const donation = await prisma.donation.findUnique({ where: { orderId } })
 
   if (!donation) {
-    throw createError({ statusCode: 404, statusMessage: "Transaksi tidak ditemukan." })
+    throw createError({ statusCode: 404, statusMessage: "Transaction not found." })
   }
 
   let { status, paymentMethod, paidAt, amount } = donation
 
-  if (status === 'pending') { 
+  if (status === "pending") { 
     const config = useRuntimeConfig()
     const isProduction = config.midtransIsProduction === "true"
     const baseUrl = isProduction ? "https://api.midtrans.com" : "https://api.sandbox.midtrans.com"
@@ -32,12 +32,12 @@ export default defineEventHandler(async (event) => {
       })
 
       let newStatus: DonationStatus = status
-      if (result.transaction_status === 'capture' || result.transaction_status === 'settlement') {
-        newStatus = result.fraud_status === 'accept' || !result.fraud_status ? 'paid' : 'failed'
-      } else if (result.transaction_status === 'expire') {
-        newStatus = 'expired'
-      } else if (result.transaction_status === 'cancel' || result.transaction_status === 'deny') {
-        newStatus = 'cancelled'
+      if (result.transaction_status === "capture" || result.transaction_status === "settlement") {
+        newStatus = result.fraud_status === "accept" || !result.fraud_status ? "paid" : "failed"
+      } else if (result.transaction_status === "expire") {
+        newStatus = "expired"
+      } else if (result.transaction_status === "cancel" || result.transaction_status === "deny") {
+        newStatus = "cancelled"
       }
 
       if (newStatus !== status) {
@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
           data: {
             status: newStatus,
             paymentMethod: result.payment_type,
-            paidAt: newStatus === 'paid' ? new Date() : null,
+            paidAt: newStatus === "paid" ? new Date() : null,
           },
         })
         status = updated.status
