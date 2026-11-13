@@ -22,6 +22,9 @@ export default defineNuxtConfig({
   colorMode: {
     classSuffix: ''
   },
+  nitro: {
+    preset: 'cloudflare_module',
+  },
   fonts: {
     families: [
       { name: 'Sansation', provider: 'google' },
@@ -29,10 +32,11 @@ export default defineNuxtConfig({
     ]
   },
   runtimeConfig: {
-    "midtransServerKey": process.env.MIDTRANS_SERVER_KEY,
+    midtransServerKey: '',
+    midtransIsProduction: '',
     public: {
-      "midtransClientKey": process.env.MIDTRANS_CLIENT_KEY,
-      "midtransSnapUrl": process.env.MIDTRANS_SNAP_URL
-    }
+      midtransClientKey: '',
+      midtransSnapUrl: '',
+    },
   },
 })

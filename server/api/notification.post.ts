@@ -1,8 +1,8 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const config = useRuntimeConfig()
+  const config = useRuntimeConfig(event)
 
   const { order_id, status_code, gross_amount, signature_key, transaction_status, transaction_id, payment_type, fraud_status } = body
 
@@ -25,23 +25,26 @@ export default defineEventHandler(async (event) => {
     status = "cancelled"
   }
 
-  try {
-    await prisma.donation.update({
-      where: { orderId: order_id },
-      data: {
-        status,
-        paymentMethod: payment_type,
-        midtransTransactionId: transaction_id,
-        paidAt: status === "paid" ? new Date() : undefined,
-        rawNotification: body,
-        signatureVerified: true,
-      },
-    })
-  } catch (err: any) {
-    if (err?.code === "P2025") {
-      throw createError({ statusCode: 404, statusMessage: "Order ID not found" })
-    }
-    throw err
+  const now = Date.now()
+  const db = useDB(event)
+
+  const result = await db.prepare(
+    `UPDATE donations
+     SET status = ?, payment_method = ?, midtrans_transaction_id = ?, paid_at = ?,
+         raw_notification = ?, signature_verified = 1, updated_at = ?
+     WHERE order_id = ?`
+  ).bind(
+    status,
+    payment_type,
+    transaction_id,
+    status === "paid" ? now : null,
+    JSON.stringify(body),
+    now,
+    order_id,
+  ).run()
+
+  if (result.meta.changes === 0) {
+    throw createError({ statusCode: 404, statusMessage: "Order ID not found" })
   }
 
   return { message: "OK" }

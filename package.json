@@ -4,23 +4,19 @@
   "private": true,
   "packageManager": "pnpm@12.14.0",
   "scripts": {
-    "build": "prisma generate && nuxt build",
+    "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
-    "preview": "nuxt preview",
+    "preview": "wrangler dev",
     "postinstall": "nuxt prepare",
-    "studio": "prisma studio",
-    "migrate": "prisma migrate dev",
-    "prisgen": "prisma generate",
-    "db": "prisma db push"
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply sakoe --local",
+    "db:migrate:remote": "wrangler d1 migrations apply sakoe --remote"
   },
   "dependencies": {
     "@lucide/vue": "^1.17.0",
     "@nuxt/eslint": "^1.15.2",
     "@nuxt/fonts": "^0.14.0",
-    "@prisma/adapter-pg": "^7.9.0",
-    "@prisma/client": "^7.9.0",
-    "@supabase/supabase-js": "^2.110.8",
     "@tailwindcss/vite": "^4.3.0",
     "@vee-validate/zod": "^4.15.1",
     "@vueuse/core": "^14.3.0",
@@ -43,10 +39,7 @@
     "@iconify/vue": "^5.0.1",
     "@nuxtjs/color-mode": "^4.0.1",
     "@types/node": "^26.1.1",
-    "dotenv": "^17.4.2",
-    "midtrans-client": "^1.4.3",
-    "prisma": "^7.8.0",
-    "tsx": "^4.23.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "wrangler": "^4.0.0"
   }
 }

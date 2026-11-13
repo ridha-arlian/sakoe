@@ -1,14 +1,19 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
+  const config = useRuntimeConfig(event)
   const body = await readBody(event)
 
   if (!body.amount || body.amount < 10000) {
     throw createError({ statusCode: 400, statusMessage: "Minimum amount is Rp 10,000" })
   }
 
+  const db = useDB(event)
   const serverKey = config.midtransServerKey
+  const isProduction = config.midtransIsProduction === "true"
+  const snapUrl = isProduction
+    ? "https://app.midtrans.com/snap/v1/transactions"
+    : "https://app.sandbox.midtrans.com/snap/v1/transactions"
   const orderId = `sakoe-${crypto.randomBytes(6).toString("hex")}`
   const authHeader = `Basic ${Buffer.from(`${serverKey}:`).toString("base64")}`
 
@@ -21,7 +26,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const response = await $fetch<{ token: string; redirect_url: string }>(
-      "https://app.sandbox.midtrans.com/snap/v1/transactions",
+      snapUrl,
       {
         method: "POST",
         headers: { accept: "application/json", "content-type": "application/json", authorization: authHeader },
@@ -29,22 +34,28 @@ export default defineEventHandler(async (event) => {
       }
     )
 
-    await prisma.donation.create({
-      data: {
-        orderId,
-        amount: BigInt(body.amount),
-        donorName: body.isAnonymous ? null : body.donorName,
-        isAnonymous: body.isAnonymous ?? false,
-        message: body.message || null,
-        status: "pending",
-      },
-    })
+    const now = Date.now()
+
+    await db.prepare(
+      `INSERT INTO donations (id, order_id, amount, donor_name, is_anonymous, message, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)`
+    ).bind(
+      crypto.randomUUID(),
+      orderId,
+      Number(body.amount),
+      body.isAnonymous ? null : (body.donorName ?? null),
+      body.isAnonymous ? 1 : 0,
+      body.message || null,
+      now,
+      now,
+    ).run()
 
     return { token: response.token, redirect_url: response.redirect_url, orderId }
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { statusCode?: number; data?: { error_messages?: string[] } }
     throw createError({
-      statusCode: error.statusCode || 500,
-      statusMessage: error.data?.error_messages?.[0] || "Failed to process transaction",
+      statusCode: err.statusCode || 500,
+      statusMessage: err.data?.error_messages?.[0] || "Failed to process transaction",
     })
   }
 })

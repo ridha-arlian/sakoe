@@ -6,15 +6,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "orderId is required." });
   }
 
-  const config = useRuntimeConfig();
+  const config = useRuntimeConfig(event);
   const isProduction = config.midtransIsProduction === "true";
   const baseUrl = isProduction ? "https://api.midtrans.com" : "https://api.sandbox.midtrans.com";
 
   const authHeader = `Basic ${Buffer.from(`${config.midtransServerKey}:`).toString("base64")}`;
 
-  const donation = await prisma.donation.findUnique({
-    where: { orderId },
-  });
+  const db = useDB(event);
+  const donation = await db.prepare(
+    `SELECT status FROM donations WHERE order_id = ?`
+  ).bind(orderId).first<{ status: string }>();
 
   if (!donation) {
     throw createError({ statusCode: 404, statusMessage: "Transaction not found." });
@@ -35,19 +36,17 @@ export default defineEventHandler(async (event) => {
         },
       }
     );
-  } catch (err: any) {
+  } catch (error) {
+    const err = error as { data?: { status_message?: string }; message?: string };
     console.warn(`Midtrans cancel skipped/failed for ${orderId}:`, err?.data?.status_message || err?.message);
   }
 
-  const updatedDonation = await prisma.donation.update({
-    where: { orderId },
-    data: {
-      status: "cancelled",
-    },
-  });
+  await db.prepare(
+    `UPDATE donations SET status = 'cancelled', updated_at = ? WHERE order_id = ?`
+  ).bind(Date.now(), orderId).run();
 
   return { 
-    orderId: updatedDonation.orderId, 
-    status: updatedDonation.status 
+    orderId, 
+    status: "cancelled" 
   };
 });

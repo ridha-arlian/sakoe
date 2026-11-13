@@ -1,4 +1,11 @@
-import type { DonationStatus } from "../../generated/prisma/client";
+interface DonationRow {
+  order_id: string
+  amount: number
+  status: string
+  payment_method: string | null
+  paid_at: number | null
+  created_at: number
+}
 
 export default defineEventHandler(async (event) => {
   const orderId = getQuery(event).order_id as string
@@ -7,16 +14,23 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "order_id is required." })
   }
 
-  const donation = await prisma.donation.findUnique({ where: { orderId } })
+  const db = useDB(event)
+  const donation = await db.prepare(
+    `SELECT order_id, amount, status, payment_method, paid_at, created_at
+     FROM donations
+     WHERE order_id = ?`
+  ).bind(orderId).first<DonationRow>()
 
   if (!donation) {
     throw createError({ statusCode: 404, statusMessage: "Transaction not found." })
   }
 
-  let { status, paymentMethod, paidAt, amount } = donation
+  let status = donation.status
+  let paymentMethod = donation.payment_method
+  let paidAt = donation.paid_at
 
-  if (status === "pending") { 
-    const config = useRuntimeConfig()
+  if (status === "pending") {
+    const config = useRuntimeConfig(event)
     const isProduction = config.midtransIsProduction === "true"
     const baseUrl = isProduction ? "https://api.midtrans.com" : "https://api.sandbox.midtrans.com"
     const authHeader = `Basic ${Buffer.from(`${config.midtransServerKey}:`).toString("base64")}`
@@ -31,7 +45,7 @@ export default defineEventHandler(async (event) => {
         headers: { Accept: "application/json", Authorization: authHeader },
       })
 
-      let newStatus: DonationStatus = status
+      let newStatus = status
       if (result.transaction_status === "capture" || result.transaction_status === "settlement") {
         newStatus = result.fraud_status === "accept" || !result.fraud_status ? "paid" : "failed"
       } else if (result.transaction_status === "expire") {
@@ -41,27 +55,29 @@ export default defineEventHandler(async (event) => {
       }
 
       if (newStatus !== status) {
-        const updated = await prisma.donation.update({
-          where: { orderId },
-          data: {
-            status: newStatus,
-            paymentMethod: result.payment_type,
-            paidAt: newStatus === "paid" ? new Date() : null,
-          },
-        })
-        status = updated.status
-        paymentMethod = updated.paymentMethod
-        paidAt = updated.paidAt
+        const now = Date.now()
+        const nextPaidAt = newStatus === "paid" ? now : null
+
+        await db.prepare(
+          `UPDATE donations
+           SET status = ?, payment_method = ?, paid_at = ?, updated_at = ?
+           WHERE order_id = ?`
+        ).bind(newStatus, result.payment_type, nextPaidAt, now, orderId).run()
+
+        status = newStatus
+        paymentMethod = result.payment_type
+        paidAt = nextPaidAt
       }
     } catch {
+      // Midtrans status check is best-effort; keep the stored status on failure.
     }
   }
 
   return {
-    orderId: donation.orderId,
+    orderId: donation.order_id,
     transactionStatus: status,
     paymentType: paymentMethod,
-    amount: Number(amount),
-    transactionTime: paidAt?.toISOString() ?? donation.createdAt.toISOString(),
+    amount: donation.amount,
+    transactionTime: new Date(paidAt ?? donation.created_at).toISOString(),
   }
 })
