@@ -10,9 +10,9 @@
   },
   "d1_databases": [
     {
-      "binding": "DB",
+      "binding": "SAKOE",
       "database_name": "sakoe",
-      "database_id": "00000000-0000-0000-0000-000000000000"
+      "database_id": "4073e689-4b11-40db-bc96-187bf17aa85b"
     }
   ]
 }

@@ -19,7 +19,7 @@ export interface D1Database {
 
 interface CloudflareContext {
   env?: {
-    DB?: D1Database
+    SAKOE?: D1Database
   }
 }
 
@@ -34,12 +34,12 @@ export function useDB(event: H3Event): D1Database {
     _platform?: { cloudflare?: CloudflareContext }
   }
 
-  const db = ctx.cloudflare?.env?.DB ?? ctx._platform?.cloudflare?.env?.DB
+  const db = ctx.cloudflare?.env?.SAKOE ?? ctx._platform?.cloudflare?.env?.SAKOE
 
   if (!db) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'D1 binding "DB" not available',
+      statusMessage: 'D1 binding "SAKOE" not available',
     })
   }
 
