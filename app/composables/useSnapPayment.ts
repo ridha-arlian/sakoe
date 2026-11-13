@@ -52,7 +52,7 @@ export function useSnapPayment(payload: DonationPayload) {
 
       const script = document.createElement("script");
       script.src = config.public.midtransSnapUrl as string;
-      script.setAttribute("data-client-key", config.public.midtransClientSandbox as string);
+      script.setAttribute("data-client-key", config.public.midtransClientKey as string);
       script.onload = () => resolve();
       script.onerror = () => reject(new Error("Failed to load payment script."));
       document.head.appendChild(script);
