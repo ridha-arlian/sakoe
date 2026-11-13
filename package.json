@@ -2,6 +2,7 @@
   "name": "sakoe",
   "type": "module",
   "private": true,
+  "packageManager": "pnpm@12.14.0",
   "scripts": {
     "build": "prisma generate && nuxt build",
     "dev": "nuxt dev",
