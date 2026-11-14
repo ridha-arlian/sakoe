@@ -52,9 +52,10 @@ export function useTransactionStatus(orderId: Ref<string>) {
       } else {
         stopPolling();
       }
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as { data?: { statusMessage?: string }; message?: string };
       console.error("Error fetching status:", err);
-      errorMsg.value = err?.data?.statusMessage || err?.message || "Failed to fetch transaction status.";
+      errorMsg.value = error?.data?.statusMessage || error?.message || "Failed to fetch transaction status.";
       stopPolling();
     } finally {
       if (!isPoll) isLoading.value = false;

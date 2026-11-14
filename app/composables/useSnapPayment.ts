@@ -118,8 +118,9 @@ export function useSnapPayment(payload: DonationPayload) {
           errorMsg.value = "You closed the payment window before completing it.";
         },
       });
-    } catch (err: any) {
-      errorMsg.value = err?.data?.statusMessage || err?.message || "Failed to load payment. Please try again.";
+    } catch (err) {
+      const error = err as { data?: { statusMessage?: string }; message?: string };
+      errorMsg.value = error?.data?.statusMessage || error?.message || "Failed to load payment. Please try again.";
       isLoading.value = false;
     }
   }
