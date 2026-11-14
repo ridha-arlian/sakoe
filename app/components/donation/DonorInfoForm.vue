@@ -1,44 +1,57 @@
 <script setup lang="ts">
-  import { watch } from "vue";
   import { Input } from "@/components/ui/input";
   import { Textarea } from "@/components/ui/textarea";
   import { Checkbox } from "@/components/ui/checkbox";
+  import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+  import { MAX_MESSAGE_LENGTH, MAX_NAME_LENGTH } from "~~/shared/donation";
 
   const donorName   = defineModel<string>("donorName", { required: true });
   const message     = defineModel<string>("message", { required: true });
   const isAnonymous = defineModel<boolean>("isAnonymous", { required: true });
 
-  watch(isAnonymous, (newVal) => {
-    donorName.value = newVal ? "Anonymous" : "";
-  });
+  useAnonymousName(donorName, isAnonymous);
 </script>
 
 <template>
-  <div class="flex flex-col gap-2.5 pt-3 border-t border-border">
-    <Input
-      v-model="donorName"
-      :disabled="isAnonymous"
-      placeholder="Your name (optional)"
-      type="text"
-      maxlength="50"
-      class="font-inter text-sm h-9 bg-background border-border disabled:opacity-50 disabled:cursor-not-allowed"
-    />
-
-    <div class="relative w-full">
-      <Textarea
-        v-model="message"
-        placeholder="Write a message of support (optional)..."
-        maxlength="200"
-        class="font-inter text-sm min-h-20 pb-6 resize-y bg-background border-border"
+  <FieldGroup class="gap-2.5 pt-3 border-t">
+    <Field>
+      <FieldLabel for="donor-name" class="text-[13px]">
+        Your name
+      </FieldLabel>
+      <Input
+        id="donor-name"
+        v-model="donorName"
+        :disabled="isAnonymous"
+        placeholder="Your name (optional)"
+        type="text"
+        :maxlength="MAX_NAME_LENGTH"
+        class="text-sm"
       />
-      <span class="absolute bottom-2 right-2.5 font-inter text-[10px] text-muted-foreground pointer-events-none select-none bg-background/80 px-1 rounded">
-        {{ message.length }}/200
-      </span>
-    </div>
+    </Field>
 
-    <label class="inline-flex w-fit font-inter items-center gap-2 text-[13px] text-muted-foreground hover:text-foreground cursor-pointer select-none transition-colors mt-0.5">
-      <Checkbox id="anonymous" v-model="isAnonymous" class="h-4 w-4" />
-      <span>Send anonymously</span>
-    </label>
-  </div>
+    <Field>
+      <FieldLabel for="donor-message" class="text-[13px]">
+        Message
+      </FieldLabel>
+      <div class="relative w-full">
+        <Textarea
+          id="donor-message"
+          v-model="message"
+          placeholder="Write a message of support (optional)..."
+          :maxlength="MAX_MESSAGE_LENGTH"
+          class="text-sm min-h-20 pb-6 resize-y"
+        />
+        <span class="absolute bottom-2 right-2.5 text-[10px] text-muted-foreground pointer-events-none select-none bg-background/80 px-1 rounded">
+          {{ message.length }}/{{ MAX_MESSAGE_LENGTH }}
+        </span>
+      </div>
+    </Field>
+
+    <Field orientation="horizontal" class="mt-0.5">
+      <Checkbox id="anonymous" v-model="isAnonymous" />
+      <FieldLabel for="anonymous" class="text-[13px] text-muted-foreground">
+        Send anonymously
+      </FieldLabel>
+    </Field>
+  </FieldGroup>
 </template>

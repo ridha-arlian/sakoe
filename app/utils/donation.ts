@@ -1,13 +1,8 @@
-export const MIN_AMOUNT = 10000;
+import { AMOUNT_PRESETS, MIN_AMOUNT } from "~~/shared/donation";
 
-export const TARGET_GOAL = 10000000;
+export { AMOUNT_PRESETS, MIN_AMOUNT };
 
-export const AMOUNT_PRESETS = [
-  { label: "Rp 10k", value: 10000 },
-  { label: "Rp 25k", value: 25000 },
-  { label: "Rp 50k", value: 50000 },
-  { label: "Rp 100k", value: 100000 },
-];
+export const TARGET_GOAL = 10_000_000;
 
 export const PAYMENT_TYPE_LABELS: Record<string, string> = {
   gopay: "GoPay",
@@ -28,7 +23,7 @@ export const STATUS_VIEW_CONFIG: Record<TxStatus, StatusViewConfig> = {
   },
   pending: {
     icon: "M12 6v6l4 2",
-    iconClass: "text-amber-500 bg-amber-500/10",
+    iconClass: "text-muted-foreground bg-muted",
     title: "Awaiting Payment",
     message: "Complete your payment before time runs out.",
     primaryLabel: "Check Again",

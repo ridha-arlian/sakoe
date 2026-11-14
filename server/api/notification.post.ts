@@ -1,51 +1,62 @@
-import crypto from "node:crypto";
-
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
+  const body = await readBody<Record<string, unknown>>(event)
   const config = useRuntimeConfig(event)
 
-  const { order_id, status_code, gross_amount, signature_key, transaction_status, transaction_id, payment_type, fraud_status } = body
-
-  const expectedSignature = crypto
-    .createHash("sha512")
-    .update(`${order_id}${status_code}${gross_amount}${config.midtransServerKey}`)
-    .digest("hex")
-
-  if (signature_key !== expectedSignature) {
-    throw createError({ statusCode: 403, statusMessage: "Invalid signature" })
+  const payload = {
+    order_id: String(body?.order_id ?? ''),
+    status_code: String(body?.status_code ?? ''),
+    gross_amount: String(body?.gross_amount ?? ''),
+    signature_key: String(body?.signature_key ?? ''),
   }
 
-  let status: "pending" | "paid" | "expired" | "failed" | "cancelled" = "pending"
-
-  if (transaction_status === "capture" || transaction_status === "settlement") {
-    status = fraud_status === "accept" || !fraud_status ? "paid" : "failed"
-  } else if (transaction_status === "expire") {
-    status = "expired"
-  } else if (transaction_status === "cancel" || transaction_status === "deny") {
-    status = "cancelled"
+  if (!payload.order_id || !payload.signature_key) {
+    throw createError({ statusCode: 400, statusMessage: 'order_id and signature_key are required' })
   }
 
-  const now = Date.now()
+  if (!verifyMidtransSignature(payload, config.midtransServerKey)) {
+    throw createError({ statusCode: 403, statusMessage: 'Invalid signature' })
+  }
+
   const db = useDB(event)
+  const donation = await db.prepare(
+    `SELECT amount, status FROM donations WHERE order_id = ?`
+  ).bind(payload.order_id).first<{ amount: number; status: string }>()
 
-  const result = await db.prepare(
+  if (!donation) {
+    throw createError({ statusCode: 404, statusMessage: 'Order ID not found' })
+  }
+
+  if (Number(payload.gross_amount) !== Number(donation.amount)) {
+    throw createError({ statusCode: 400, statusMessage: 'Gross amount does not match the donation' })
+  }
+
+  if (!isNotificationApplicable(donation.status)) {
+    return { message: 'OK' }
+  }
+
+  const transactionStatus = String(body?.transaction_status ?? '')
+  const fraudStatus = typeof body?.fraud_status === 'string' ? body.fraud_status : undefined
+  const nextStatus = mapMidtransStatus(transactionStatus, fraudStatus) ?? 'pending'
+  const paymentMethod = typeof body?.payment_type === 'string' ? body.payment_type : null
+  const transactionId = typeof body?.transaction_id === 'string' ? body.transaction_id : null
+  const now = Date.now()
+
+  await db.prepare(
     `UPDATE donations
-     SET status = ?, payment_method = ?, midtrans_transaction_id = ?, paid_at = ?,
+     SET status = ?, payment_method = ?, midtrans_transaction_id = ?,
+         paid_at = CASE WHEN ? = 'paid' AND paid_at IS NULL THEN ? ELSE paid_at END,
          raw_notification = ?, signature_verified = 1, updated_at = ?
-     WHERE order_id = ?`
+     WHERE order_id = ? AND status <> 'paid'`
   ).bind(
-    status,
-    payment_type,
-    transaction_id,
-    status === "paid" ? now : null,
+    nextStatus,
+    paymentMethod,
+    transactionId,
+    nextStatus,
+    now,
     JSON.stringify(body),
     now,
-    order_id,
+    payload.order_id,
   ).run()
 
-  if (result.meta.changes === 0) {
-    throw createError({ statusCode: 404, statusMessage: "Order ID not found" })
-  }
-
-  return { message: "OK" }
+  return { message: 'OK' }
 })

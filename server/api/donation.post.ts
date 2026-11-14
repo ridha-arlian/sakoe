@@ -1,13 +1,20 @@
 import crypto from "node:crypto";
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig(event)
-  const body = await readBody(event)
+  await assertWithinRateLimit(event)
 
-  if (!body.amount || body.amount < 10000) {
-    throw createError({ statusCode: 400, statusMessage: "Minimum amount is Rp 10,000" })
+  const parsed = parseDonationInput(await readBody(event))
+
+  if (!parsed.ok) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Invalid donation input",
+      data: parsed.errors,
+    })
   }
 
+  const donation = parsed.value
+  const config = useRuntimeConfig(event)
   const db = useDB(event)
   const serverKey = config.midtransServerKey
   const isProduction = config.midtransIsProduction === "true"
@@ -16,46 +23,62 @@ export default defineEventHandler(async (event) => {
     : "https://app.sandbox.midtrans.com/snap/v1/transactions"
   const orderId = `sakoe-${crypto.randomBytes(6).toString("hex")}`
   const authHeader = `Basic ${Buffer.from(`${serverKey}:`).toString("base64")}`
+  const now = Date.now()
 
-  const payload = {
-    transaction_details: { order_id: orderId, gross_amount: Number(body.amount) },
-    credit_card: { secure: true },
-    customer_details: { first_name: body.donorName || "Anonymous" },
-    custom_field1: body.message || '',
-  }
+  await db.prepare(
+    `INSERT INTO donations (id, order_id, amount, donor_name, is_anonymous, message, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)`
+  ).bind(
+    crypto.randomUUID(),
+    orderId,
+    donation.amount,
+    donation.isAnonymous ? null : donation.donorName,
+    donation.isAnonymous ? 1 : 0,
+    donation.message,
+    now,
+    now,
+  ).run()
+
+  const payload = buildSnapPayload(donation, orderId)
 
   try {
-    const response = await $fetch<{ token: string; redirect_url: string }>(
-      snapUrl,
-      {
-        method: "POST",
-        headers: { accept: "application/json", "content-type": "application/json", authorization: authHeader },
-        body: payload,
-      }
-    )
-
-    const now = Date.now()
+    const response = await $fetch<{ token: string; redirect_url: string }>(snapUrl, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+        authorization: authHeader,
+      },
+      body: payload,
+    })
 
     await db.prepare(
-      `INSERT INTO donations (id, order_id, amount, donor_name, is_anonymous, message, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)`
-    ).bind(
-      crypto.randomUUID(),
-      orderId,
-      Number(body.amount),
-      body.isAnonymous ? null : (body.donorName ?? null),
-      body.isAnonymous ? 1 : 0,
-      body.message || null,
-      now,
-      now,
-    ).run()
+      `UPDATE donations SET snap_token = ?, snap_redirect_url = ?, updated_at = ? WHERE order_id = ?`
+    ).bind(response.token, response.redirect_url, Date.now(), orderId).run()
 
-    return { token: response.token, redirect_url: response.redirect_url, orderId }
+    return {
+      token: response.token,
+      redirect_url: response.redirect_url,
+      orderId,
+      cancelToken: signCancelToken(orderId, serverKey),
+    }
   } catch (error) {
-    const err = error as { statusCode?: number; data?: { error_messages?: string[] } }
+    await db.prepare(
+      `UPDATE donations SET status = 'failed', updated_at = ? WHERE order_id = ?`
+    ).bind(Date.now(), orderId).run()
+
+    const err = error as {
+      statusCode?: number
+      data?: { error_messages?: string[]; status_message?: string }
+      message?: string
+    }
+
     throw createError({
-      statusCode: err.statusCode || 500,
-      statusMessage: err.data?.error_messages?.[0] || "Failed to process transaction",
+      statusCode: 502,
+      statusMessage:
+        err.data?.error_messages?.[0] ||
+        err.data?.status_message ||
+        "Failed to create the payment transaction",
     })
   }
 })

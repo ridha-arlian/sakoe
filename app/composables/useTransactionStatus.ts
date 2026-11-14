@@ -1,31 +1,35 @@
-const POLL_INTERVAL = 5000;
-const MAX_POLL_ATTEMPTS = 24;
+const POLL_DELAYS = [4000, 6000, 9000, 13500, 20000, 30000];
+const MAX_POLL_ATTEMPTS = 12;
 
 export function useTransactionStatus(orderId: Ref<string>) {
   const isLoading = ref(true);
   const errorMsg = ref("");
   const data = ref<DonationStatus | null>(null);
 
-  let pollTimer: ReturnType<typeof setInterval> | null = null;
+  let pollTimer: ReturnType<typeof setTimeout> | null = null;
   let pollAttempts = 0;
-
-  function startPolling() {
-    stopPolling();
-    pollTimer = setInterval(async () => {
-      pollAttempts++;
-      if (pollAttempts >= MAX_POLL_ATTEMPTS) {
-        stopPolling();
-        return;
-      }
-      await fetchStatus(true);
-    }, POLL_INTERVAL);
-  }
+  let active = false;
 
   function stopPolling() {
     if (pollTimer) {
-      clearInterval(pollTimer);
+      clearTimeout(pollTimer);
       pollTimer = null;
     }
+  }
+
+  function schedulePoll() {
+    stopPolling();
+
+    if (!active || pollAttempts >= MAX_POLL_ATTEMPTS) {
+      return;
+    }
+
+    const delay = POLL_DELAYS[Math.min(pollAttempts, POLL_DELAYS.length - 1)];
+
+    pollTimer = setTimeout(async () => {
+      pollAttempts++;
+      await fetchStatus(true);
+    }, delay);
   }
 
   async function fetchStatus(isPoll = false) {
@@ -34,6 +38,7 @@ export function useTransactionStatus(orderId: Ref<string>) {
     if (!currentOrderId) {
       errorMsg.value = "Order ID not found.";
       isLoading.value = false;
+      stopPolling();
       return;
     }
 
@@ -48,7 +53,7 @@ export function useTransactionStatus(orderId: Ref<string>) {
       data.value = result;
 
       if (result?.transactionStatus === "pending") {
-        if (!pollTimer) startPolling();
+        schedulePoll();
       } else {
         stopPolling();
       }
@@ -62,20 +67,35 @@ export function useTransactionStatus(orderId: Ref<string>) {
     }
   }
 
-  watch(
-    orderId,
-    (newId) => {
-      if (newId) {
-        fetchStatus();
-      } else {
-        errorMsg.value = "Order ID not found in URL.";
-        isLoading.value = false;
-      }
-    },
-    { immediate: true }
-  );
+  onMounted(() => {
+    active = true;
+
+    if (!orderId.value) {
+      errorMsg.value = "Order ID not found in URL.";
+      isLoading.value = false;
+      return;
+    }
+
+    fetchStatus();
+  });
+
+  watch(orderId, (newId) => {
+    if (!active) return;
+
+    stopPolling();
+    pollAttempts = 0;
+
+    if (!newId) {
+      errorMsg.value = "Order ID not found in URL.";
+      isLoading.value = false;
+      return;
+    }
+
+    fetchStatus();
+  });
 
   onUnmounted(() => {
+    active = false;
     stopPolling();
   });
 

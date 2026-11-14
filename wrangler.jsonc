@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "sakoe",
   "main": "./.output/server/index.mjs",
-  "compatibility_date": "2025-07-15",
+  "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": "./.output/public/",
@@ -13,6 +13,13 @@
       "binding": "SAKOE",
       "database_name": "sakoe",
       "database_id": "4073e689-4b11-40db-bc96-187bf17aa85b"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "DONATION_LIMIT",
+      "namespace_id": "1001",
+      "simple": { "limit": 5, "period": 60 }
     }
   ]
 }

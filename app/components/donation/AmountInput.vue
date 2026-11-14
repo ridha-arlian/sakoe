@@ -19,24 +19,16 @@
     amount.value = next >= MIN_AMOUNT ? next : MIN_AMOUNT;
   }
 
-  function handleInput(e: Event) {
-    const target = e.target as HTMLInputElement;
-    const rawVal = target.value.replace(/\D/g, "");
-    amount.value = rawVal ? Number(rawVal) : undefined;
-  }
-
   const formattedAmount = computed(() => {
     return amount.value ? formatIDR(amount.value) : "Rp 0";
   });
-
-  defineExpose({ isAmountValid });
 </script>
 
 <template>
   <div>
     <NumberField
       v-model="amount"
-      class="font-inter w-full"
+      class="w-full"
       locale="id-ID"
       :min="MIN_AMOUNT"
       :step="1"
@@ -52,37 +44,36 @@
           type="button"
           variant="outline"
           size="icon"
-          class="h-9 w-9 shrink-0 border-border"
+          class="size-9 shrink-0"
           :disabled="amount !== undefined && amount <= MIN_AMOUNT"
           @click="decrement100"
         >
-          <Minus class="h-3.5 w-3.5" />
+          <Minus />
         </Button>
 
         <NumberFieldInput
           placeholder="Enter amount..."
-          class="font-inter font-semibold text-center h-9 text-sm"
-          @input="handleInput"
+          class="font-semibold text-center text-sm"
         />
 
         <Button
           type="button"
           variant="outline"
           size="icon"
-          class="h-9 w-9 shrink-0 border-border"
+          class="size-9 shrink-0"
           @click="increment100"
         >
-          <Plus class="h-3.5 w-3.5" />
+          <Plus />
         </Button>
       </NumberFieldContent>
     </NumberField>
 
-    <div class="flex items-center justify-between mt-1.5 px-0.5 font-inter text-xs">
+    <div class="flex items-center justify-between mt-1.5 px-0.5 text-xs">
       <p class="text-muted-foreground">
-        Amount: <span class="font-inter font-semibold text-xs text-foreground">{{ formattedAmount }}</span>
+        Amount: <span class="font-semibold text-xs text-foreground">{{ formattedAmount }}</span>
       </p>
 
-      <p v-if="!isAmountValid" class="font-inter text-destructive font-medium text-[11px]">
+      <p v-if="!isAmountValid" class="text-destructive font-medium text-[11px]">
         Minimum Rp 10,000
       </p>
     </div>

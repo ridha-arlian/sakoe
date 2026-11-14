@@ -1,12 +1,18 @@
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const orderId = body.orderId as string;
-
-  if (!orderId) {
-    throw createError({ statusCode: 400, statusMessage: "orderId is required." });
-  }
+  const cancelToken = body.cancelToken as string | undefined;
 
   const config = useRuntimeConfig(event);
+
+  if (!orderId || !cancelToken) {
+    throw createError({ statusCode: 400, statusMessage: "orderId and cancelToken are required." });
+  }
+
+  if (!verifyCancelToken(orderId, cancelToken, config.midtransServerKey)) {
+    throw createError({ statusCode: 403, statusMessage: "Invalid cancel token." });
+  }
+
   const isProduction = config.midtransIsProduction === "true";
   const baseUrl = isProduction ? "https://api.midtrans.com" : "https://api.sandbox.midtrans.com";
 

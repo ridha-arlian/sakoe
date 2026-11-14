@@ -1,3 +1,6 @@
+import type { H3Event } from 'h3'
+import type { RateLimitBinding } from './rate-limit'
+
 interface D1Result<T> {
   results: T[]
   success: boolean
@@ -20,6 +23,7 @@ export interface D1Database {
 interface CloudflareContext {
   env?: {
     SAKOE?: D1Database
+    DONATION_LIMIT?: RateLimitBinding
   }
 }
 

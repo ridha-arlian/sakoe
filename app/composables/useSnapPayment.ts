@@ -1,3 +1,5 @@
+import { toast } from "vue-sonner";
+
 interface DonationPayload {
   amount: number;
   donorName: string;
@@ -14,6 +16,7 @@ export function useSnapPayment(payload: DonationPayload) {
   const errorMsg = ref("");
   const hasInitialized = ref(false);
   const currentOrderId = ref("");
+  const currentCancelToken = ref("");
   const isCompletedOrRedirecting = ref(false);
 
   let observer: MutationObserver | null = null;
@@ -92,12 +95,17 @@ export function useSnapPayment(payload: DonationPayload) {
     try {
       await loadSnapScript();
 
-      const { token, orderId } = await $fetch<{ token: string; orderId: string }>("/api/donation", {
+      const { token, orderId, cancelToken } = await $fetch<{
+        token: string;
+        orderId: string;
+        cancelToken: string;
+      }>("/api/donation", {
         method: "POST",
         body: payload,
       });
 
       currentOrderId.value = orderId;
+      currentCancelToken.value = cancelToken;
       isLoading.value = false;
       await nextTick();
 
@@ -121,6 +129,7 @@ export function useSnapPayment(payload: DonationPayload) {
     } catch (err) {
       const error = err as { data?: { statusMessage?: string }; message?: string };
       errorMsg.value = error?.data?.statusMessage || error?.message || "Failed to load payment. Please try again.";
+      toast.error(errorMsg.value);
       isLoading.value = false;
     }
   }
@@ -130,7 +139,10 @@ export function useSnapPayment(payload: DonationPayload) {
     try {
       await $fetch("/api/cancel", {
         method: "POST",
-        body: { orderId: currentOrderId.value },
+        body: {
+          orderId: currentOrderId.value,
+          cancelToken: currentCancelToken.value,
+        },
       });
     } catch (err) {
       console.warn("Failed to cancel transaction on server:", err);

@@ -4,8 +4,8 @@
 
   const amount = defineModel<number | undefined>({ required: true });
 
-  function setPreset(val: number) {
-    amount.value = val;
+  function setPreset(value: number) {
+    amount.value = value;
   }
 </script>
 
@@ -16,8 +16,8 @@
       :key="preset.value"
       type="button"
       variant="outline"
-      class="font-inter font-semibold text-xs h-8.5 transition-colors px-0 w-full"
-      :class="{ 'border-primary bg-primary/10 text-primary font-inter font-semibold text-xs': amount === preset.value }"
+      class="font-semibold text-xs h-8.5 transition-colors px-0 w-full"
+      :class="{ 'border-primary bg-primary/10 text-primary': amount === preset.value }"
       @click="setPreset(preset.value)"
     >
       {{ preset.label }}

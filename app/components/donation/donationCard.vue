@@ -1,13 +1,13 @@
 <script setup lang="ts">
   import { ref, computed } from "vue";
-  import { Card } from "@/components/ui/card";
+  import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
   import { Button } from "@/components/ui/button";
+  import { Alert } from "@/components/ui/alert";
   import { Heart, ShieldCheck, Loader2 } from "@lucide/vue";
+  import { MIN_AMOUNT } from "~~/shared/donation";
   import AmountInput from "./AmountInput.vue";
   import AmountPresets from "./AmountPresets.vue";
   import DonorInfoForm from "./DonorInfoForm.vue";
-
-  const MIN_AMOUNT = 10000;
 
   const amount      = ref<number | undefined>(MIN_AMOUNT);
   const donorName   = ref("");
@@ -30,47 +30,50 @@
       message: message.value,
       isAnonymous: isAnonymous.value,
     };
+    saveDonationDraft(form.value);
 
     await navigateTo("/checkout");
   }
 </script>
 
 <template>
-  <Card class="mt-6 w-full max-w-sm bg-card border border-border rounded-xl p-5 text-left shadow-sm flex flex-col gap-4">
-    <div>
-      <h2 class="font-inter text-base font-semibold text-foreground">
+  <Card class="mt-6 w-full max-w-sm gap-4 py-5">
+    <CardHeader class="px-5 text-left">
+      <CardTitle class="text-base">
         Buy me something?
-      </h2>
-    </div>
+      </CardTitle>
+    </CardHeader>
 
-    <AmountPresets v-model="amount" />
-    <AmountInput ref="numberInputRef" v-model="amount" />
+    <CardContent class="px-5 flex flex-col gap-4">
+      <AmountPresets v-model="amount" />
+      <AmountInput v-model="amount" />
 
-    <DonorInfoForm
-      v-model:donorName="donorName"
-      v-model:message="message"
-      v-model:isAnonymous="isAnonymous"
-    />
+      <DonorInfoForm
+        v-model:donorName="donorName"
+        v-model:message="message"
+        v-model:isAnonymous="isAnonymous"
+      />
+    </CardContent>
 
-    <div class="flex flex-col gap-2.5 pt-1">
-      <p v-if="errorMsg" class="font-inter text-center text-[12px] text-destructive">
+    <CardFooter class="px-5 flex-col gap-2.5">
+      <Alert v-if="errorMsg" variant="destructive" class="text-xs">
         {{ errorMsg }}
-      </p>
+      </Alert>
 
       <Button
         :disabled="!isAmountValid || isLoading"
-        class="font-inter w-full h-10 text-sm font-medium gap-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full"
         @click="handleDonate"
       >
-        <Loader2 v-if="isLoading" class="w-4 h-4 animate-spin" />
-        <Heart v-else class="w-4 h-4" />
+        <Loader2 v-if="isLoading" data-icon="inline-start" class="animate-spin" />
+        <Heart v-else data-icon="inline-start" />
         {{ isLoading ? "Redirecting..." : "Donate now" }}
       </Button>
 
-      <p class="font-inter text-center text-[11px] text-muted-foreground flex items-center justify-center gap-1">
-        <ShieldCheck class="w-3.5 h-3.5 text-muted-foreground" />
+      <p class="text-center text-[11px] text-muted-foreground flex items-center justify-center gap-1">
+        <ShieldCheck class="w-3.5 h-3.5" />
         Secure &amp; encrypted transaction via Midtrans
       </p>
-    </div>
+    </CardFooter>
   </Card>
 </template>

@@ -4,23 +4,41 @@ interface StatsResponse {
 }
 
 export function useStatsPolling(intervalMs = 20000) {
-  const { data, refresh } = useFetch<StatsResponse>("/api/stats");
+  const { data, pending, refresh } = useAsyncData(
+    "stats",
+    () => $fetch<StatsResponse>("/api/stats"),
+    {
+      default: () => null as StatsResponse | null,
+      lazy: true,
+    },
+  );
 
   let interval: ReturnType<typeof setInterval> | null = null;
+
+  function stopPolling() {
+    if (interval) {
+      clearInterval(interval);
+      interval = null;
+    }
+  }
 
   function handleVisibility() {
     if (document.visibilityState === "visible") refresh();
   }
 
   onMounted(() => {
-    interval = setInterval(() => refresh(), intervalMs);
+    stopPolling();
+    interval = setInterval(() => {
+      if (document.visibilityState === "visible") refresh();
+    }, intervalMs);
+
     document.addEventListener("visibilitychange", handleVisibility);
   });
 
   onUnmounted(() => {
-    if (interval) clearInterval(interval);
+    stopPolling();
     document.removeEventListener("visibilitychange", handleVisibility);
   });
 
-  return { data, refresh };
+  return { data, pending, refresh };
 }
