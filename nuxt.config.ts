@@ -41,6 +41,10 @@ export default defineNuxtConfig({
     preset: 'cloudflare_module',
   },
   routeRules: {
+    '/api/stats': {
+      swr: 10,
+      headers: { 'cache-control': 'public, max-age=10, stale-while-revalidate=40' },
+    },
     '/**': {
       headers: {
         'X-Content-Type-Options': 'nosniff',

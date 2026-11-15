@@ -9,7 +9,6 @@ export function useStatsPolling(intervalMs = 20000) {
     () => $fetch<StatsResponse>("/api/stats"),
     {
       default: () => null as StatsResponse | null,
-      lazy: true,
     },
   );
 
@@ -28,6 +27,7 @@ export function useStatsPolling(intervalMs = 20000) {
 
   onMounted(() => {
     stopPolling();
+    refresh();
     interval = setInterval(() => {
       if (document.visibilityState === "visible") refresh();
     }, intervalMs);
