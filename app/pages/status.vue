@@ -18,7 +18,7 @@
 
   const route = useRoute();
 
-  useSeoMeta({ title: "Status — Sakoe", robots: "noindex, nofollow" });
+  useSeoMeta({ title: "Status | Sakoe", robots: "noindex, nofollow" });
 
   const orderId = computed(() => (route.query.order_id as string) || "");
 

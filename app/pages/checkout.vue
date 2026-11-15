@@ -8,7 +8,7 @@
 
   definePageMeta({ middleware: "donation-draft", ssr: false });
 
-  useSeoMeta({ title: "Checkout — Sakoe", robots: "noindex, nofollow" });
+  useSeoMeta({ title: "Checkout | Sakoe", robots: "noindex, nofollow" });
 
   const draft = form.value!;
 

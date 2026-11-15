@@ -22,7 +22,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       htmlAttrs: { lang: 'en' },
-      title: 'Sakoe — Support the work',
+      title: 'Sakoe | Fuel the Work',
       meta: [
         {
           name: 'description',
@@ -31,7 +31,7 @@ export default defineNuxtConfig({
         { property: 'og:type', content: 'website' },
         { name: 'twitter:card', content: 'summary_large_image' },
       ],
-      link: [{ rel: 'icon', href: '/favicon.ico' }],
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/logo-S-kantong.svg' }],
     },
   },
   colorMode: {
