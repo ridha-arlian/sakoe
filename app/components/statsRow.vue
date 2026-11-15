@@ -3,7 +3,7 @@
   import { Progress } from "@/components/ui/progress";
   import { Skeleton } from "@/components/ui/skeleton";
 
-  const { data, pending } = useStatsPolling();
+  const { data } = useStatsPolling();
 
   const totalCollected = computed(() => data.value?.totalCollected ?? 0);
   const totalSupporters = computed(() => data.value?.totalSupporters ?? 0);
@@ -16,7 +16,7 @@
 </script>
 
 <template>
-  <div v-if="!data || pending" class="mt-6 flex gap-4 flex-wrap justify-center w-full max-w-sm mx-auto">
+  <div v-if="!data" class="mt-6 flex gap-4 flex-wrap justify-center w-full max-w-sm mx-auto">
     <div
       v-for="n in 2"
       :key="`skeleton-${n}`"

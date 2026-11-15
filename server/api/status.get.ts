@@ -43,6 +43,7 @@ export default defineEventHandler(async (event) => {
       }>(`${baseUrl}/v2/${orderId}/status`, {
         method: "GET",
         headers: { Accept: "application/json", Authorization: authHeader },
+        timeout: 2500,
       })
 
       let newStatus = status
