@@ -7,7 +7,7 @@ const colorMode = useColorMode()
 </script>
 
 <template>
-  <DropdownMenu>
+  <DropdownMenu :modal="false">
     <DropdownMenuTrigger as-child>
       <Button variant="outline" size="icon">
         <Moon class="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
