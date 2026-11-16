@@ -2,7 +2,6 @@
   import { ref, computed } from "vue";
   import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
   import { Button } from "@/components/ui/button";
-  import { Alert } from "@/components/ui/alert";
   import { Heart, ShieldCheck, Loader2 } from "@lucide/vue";
   import { MIN_AMOUNT } from "~~/shared/donation";
   import AmountInput from "./AmountInput.vue";
@@ -14,7 +13,6 @@
   const message     = ref("");
   const isAnonymous = ref(false);
   const isLoading   = ref(false);
-  const errorMsg    = ref("");
 
   const isAmountValid = computed(() => amount.value !== undefined && amount.value >= MIN_AMOUNT);
 
@@ -56,10 +54,6 @@
     </CardContent>
 
     <CardFooter class="px-5 flex-col gap-2.5">
-      <Alert v-if="errorMsg" variant="destructive" class="text-xs">
-        {{ errorMsg }}
-      </Alert>
-
       <Button
         :disabled="!isAmountValid || isLoading"
         class="w-full"

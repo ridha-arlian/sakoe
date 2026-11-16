@@ -2,7 +2,7 @@
   import { Loader2 } from "@lucide/vue";
   import { Button } from "@/components/ui/button";
   import { Card, CardContent, CardFooter } from "@/components/ui/card";
-  import { Alert, AlertDescription } from "@/components/ui/alert";
+  import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
   const form = useDonationForm();
 
@@ -19,7 +19,7 @@
 
   const formattedAmount = computed(() => formatIDR(amount));
 
-  const { isLoading, isEmbedRendering, isCancelling, errorMsg, handleCancelClick } = useSnapPayment({
+  const { isLoading, isEmbedRendering, isCancelling, errorMsg, snapClosed, reopenSnap, handleCancelClick } = useSnapPayment({
     amount,
     donorName,
     message,
@@ -46,6 +46,17 @@
         {{ errorMsg }}
       </AlertDescription>
     </Alert>
+
+    <Alert v-else-if="snapClosed" class="w-full max-w-md">
+      <AlertTitle class="text-center">Payment window closed</AlertTitle>
+      <AlertDescription class="text-center">
+        Your payment is still waiting. Reopen it to continue.
+      </AlertDescription>
+    </Alert>
+
+    <Button v-if="snapClosed && !errorMsg" class="w-full max-w-md" @click="reopenSnap">
+      Open payment again
+    </Button>
 
     <div v-if="!isLoading && !errorMsg" class="relative w-full max-w-md" style="min-height: 600px;">
       <div v-if="isEmbedRendering" class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/80 backdrop-blur-sm rounded-xl">

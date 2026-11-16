@@ -1,5 +1,3 @@
-import { toast } from "vue-sonner";
-
 interface DonationPayload {
   amount: number;
   donorName: string;
@@ -17,13 +15,17 @@ export function useSnapPayment(payload: DonationPayload) {
   const hasInitialized = ref(false);
   const currentOrderId = ref("");
   const currentCancelToken = ref("");
+  const currentToken = ref("");
   const isCompletedOrRedirecting = ref(false);
+  const snapClosed = ref(false);
 
   let observer: MutationObserver | null = null;
 
   function watchIframeLoad() {
     const container = document.getElementById("snap-container");
     if (!container) return;
+
+    if (container.querySelector("iframe")) return;
 
     isEmbedRendering.value = true;
 
@@ -82,6 +84,32 @@ export function useSnapPayment(payload: DonationPayload) {
     redirectToStatus();
   }
 
+  function showSnap(token: string) {
+    snapClosed.value = false;
+    watchIframeLoad();
+
+    window.snap.embed(token, {
+      embedId: "snap-container",
+      onSuccess() {
+        handleRedirectToStatus();
+      },
+      onPending() {
+        handleRedirectToStatus();
+      },
+      onError() {
+        handleRedirectToStatus();
+      },
+      onClose() {
+        snapClosed.value = true;
+      },
+    });
+  }
+
+  function reopenSnap() {
+    if (isCompletedOrRedirecting.value || !currentToken.value) return;
+    showSnap(currentToken.value);
+  }
+
   async function initPayment() {
     if (hasInitialized.value) return;
     hasInitialized.value = true;
@@ -106,30 +134,14 @@ export function useSnapPayment(payload: DonationPayload) {
 
       currentOrderId.value = orderId;
       currentCancelToken.value = cancelToken;
+      currentToken.value = token;
       isLoading.value = false;
       await nextTick();
 
-      watchIframeLoad();
-
-      window.snap.embed(token, {
-        embedId: "snap-container",
-        onSuccess() {
-          handleRedirectToStatus();
-        },
-        onPending() {
-          handleRedirectToStatus();
-        },
-        onError() {
-          handleRedirectToStatus();
-        },
-        onClose() {
-          errorMsg.value = "You closed the payment window before completing it.";
-        },
-      });
+      showSnap(token);
     } catch (err) {
       const error = err as { data?: { statusMessage?: string }; message?: string };
       errorMsg.value = error?.data?.statusMessage || error?.message || "Failed to load payment. Please try again.";
-      toast.error(errorMsg.value);
       isLoading.value = false;
     }
   }
@@ -185,6 +197,8 @@ export function useSnapPayment(payload: DonationPayload) {
     isEmbedRendering,
     isCancelling,
     errorMsg,
+    snapClosed,
+    reopenSnap,
     handleCancelClick,
   };
 }
