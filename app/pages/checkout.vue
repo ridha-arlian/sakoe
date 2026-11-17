@@ -1,8 +1,19 @@
 <script setup lang="ts">
-  import { Loader2 } from "@lucide/vue";
+  import { ExternalLink, Loader2, LockKeyhole } from "@lucide/vue";
+  import { Alert, AlertDescription } from "@/components/ui/alert";
+  import { Badge } from "@/components/ui/badge";
   import { Button } from "@/components/ui/button";
-  import { Card, CardContent, CardFooter } from "@/components/ui/card";
-  import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+  import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+  import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+  import { Input } from "@/components/ui/input";
+  import { Separator } from "@/components/ui/separator";
+  import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+  import {
+    isTakoPaymentMethod,
+    PAYMENT_METHOD_LABELS,
+    TAKO_PAYMENT_METHODS,
+    type TakoPaymentMethod,
+  } from "~~/shared/donation";
 
   const form = useDonationForm();
 
@@ -17,81 +28,143 @@
   const message = draft.message;
   const isAnonymous = draft.isAnonymous;
 
-  const formattedAmount = computed(() => formatIDR(amount));
+  const email = ref(draft.email);
+  const paymentMethod = ref<TakoPaymentMethod>(draft.paymentMethod);
 
-  const { isLoading, isEmbedRendering, isCancelling, errorMsg, snapClosed, reopenSnap, handleCancelClick } = useSnapPayment({
-    amount,
-    donorName,
-    message,
-    isAnonymous,
-  });
+  const formattedAmount = computed(() => formatIDR(amount));
+  const displayName = computed(() => (isAnonymous ? "Anonymous" : donorName || "Anonymous"));
+  const isEmailValid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()));
+  const showEmailError = computed(() => email.value.trim().length > 0 && !isEmailValid.value);
+
+  const { isRedirecting, errorMsg, startPayment } = useTakoPayment();
+
+  function persistDraft() {
+    if (!form.value) return;
+
+    form.value = {
+      ...form.value,
+      email: email.value.trim(),
+      paymentMethod: paymentMethod.value,
+    };
+    saveDonationDraft(form.value);
+  }
+
+  function updatePaymentMethod(value: unknown) {
+    if (isTakoPaymentMethod(value)) {
+      paymentMethod.value = value;
+      persistDraft();
+    }
+  }
+
+  async function handlePay() {
+    if (!isEmailValid.value || isRedirecting.value) return;
+
+    persistDraft();
+
+    await startPayment({
+      amount,
+      donorName,
+      message,
+      isAnonymous,
+      email: email.value.trim(),
+      paymentMethod: paymentMethod.value,
+    });
+  }
 </script>
 
 <template>
   <div class="min-h-dvh flex flex-col items-center bg-background px-4 py-12 gap-4">
     <Card class="w-full max-w-md">
-      <CardContent class="text-center">
-        <p class="text-sm text-muted-foreground">Completing payment</p>
-        <p class="text-lg font-semibold text-foreground mt-0.5">{{ formattedAmount }}</p>
+      <CardHeader>
+        <CardTitle>Checkout</CardTitle>
+        <CardDescription>Review your donation before paying.</CardDescription>
+      </CardHeader>
+
+      <CardContent class="flex flex-col gap-5">
+        <div class="rounded-xl bg-muted/50 px-4">
+          <div class="flex items-center justify-between py-3">
+            <span class="text-sm text-muted-foreground">Amount</span>
+            <Badge variant="secondary">{{ formattedAmount }}</Badge>
+          </div>
+          <Separator />
+          <div class="flex items-center justify-between py-3">
+            <span class="text-sm text-muted-foreground">From</span>
+            <span class="text-sm font-medium text-foreground">{{ displayName }}</span>
+          </div>
+          <template v-if="message">
+            <Separator />
+            <div class="py-3">
+              <p class="text-sm text-foreground whitespace-pre-wrap break-words">{{ message }}</p>
+            </div>
+          </template>
+        </div>
+
+        <FieldGroup class="gap-4">
+          <Field :data-invalid="showEmailError">
+            <FieldLabel for="email" class="text-[13px]">Email</FieldLabel>
+            <Input
+              id="email"
+              v-model="email"
+              type="email"
+              inputmode="email"
+              autocomplete="email"
+              placeholder="you@example.com"
+              :maxlength="254"
+              :aria-invalid="showEmailError"
+              class="text-sm"
+            />
+            <FieldError v-if="showEmailError">Enter a valid email address.</FieldError>
+            <FieldDescription v-else>
+              Used by Tako for the payment receipt. Your name can stay anonymous.
+            </FieldDescription>
+          </Field>
+
+          <Field>
+            <FieldLabel class="text-[13px]">Payment method</FieldLabel>
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              :model-value="paymentMethod"
+              class="grid w-full grid-cols-2"
+              @update:model-value="updatePaymentMethod"
+            >
+              <ToggleGroupItem
+                v-for="method in TAKO_PAYMENT_METHODS"
+                :key="method"
+                :value="method"
+                class="w-full justify-center"
+              >
+                {{ PAYMENT_METHOD_LABELS[method] }}
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </Field>
+        </FieldGroup>
+
+        <Alert v-if="errorMsg" variant="destructive">
+          <AlertDescription>{{ errorMsg }}</AlertDescription>
+        </Alert>
       </CardContent>
-    </Card>
 
-    <div v-if="isLoading" class="flex flex-col items-center justify-center py-16 gap-3">
-      <Loader2 class="size-6 animate-spin text-primary" />
-      <p class="text-sm text-muted-foreground">Preparing payment...</p>
-    </div>
-
-    <Alert v-if="errorMsg" variant="destructive" class="w-full max-w-md">
-      <AlertDescription class="text-center">
-        {{ errorMsg }}
-      </AlertDescription>
-    </Alert>
-
-    <Alert v-else-if="snapClosed" class="w-full max-w-md">
-      <AlertTitle class="text-center">Payment window closed</AlertTitle>
-      <AlertDescription class="text-center">
-        Your payment is still waiting. Reopen it to continue.
-      </AlertDescription>
-    </Alert>
-
-    <Button v-if="snapClosed && !errorMsg" class="w-full max-w-md" @click="reopenSnap">
-      Open payment again
-    </Button>
-
-    <div v-if="!isLoading && !errorMsg" class="relative w-full max-w-md" style="min-height: 600px;">
-      <div v-if="isEmbedRendering" class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/80 backdrop-blur-sm rounded-xl">
-        <Loader2 class="size-6 animate-spin text-primary" />
-        <p class="text-sm text-muted-foreground">Opening payment window...</p>
-      </div>
-      <div id="snap-container" class="snap-embed-container" />
-    </div>
-
-    <Card class="w-full max-w-md">
-      <CardFooter>
+      <CardFooter class="flex-col gap-2.5">
         <Button
-          variant="outline"
           class="w-full"
-          :disabled="isCancelling"
-          @click="handleCancelClick"
+          :disabled="!isEmailValid || isRedirecting"
+          @click="handlePay"
         >
-          <Loader2 v-if="isCancelling" class="animate-spin" />
-          {{ isCancelling ? "Cancelling..." : "Cancel payment" }}
+          <Loader2 v-if="isRedirecting" data-icon="inline-start" class="animate-spin" />
+          <ExternalLink v-else data-icon="inline-start" />
+          {{ isRedirecting ? "Redirecting to Tako..." : "Pay with Tako" }}
+        </Button>
+
+        <p class="text-center text-[11px] text-muted-foreground flex items-center justify-center gap-1">
+          <LockKeyhole class="size-3.5" />
+          You will be redirected to Tako to complete payment
+        </p>
+
+        <Button variant="ghost" size="sm" as-child class="w-full">
+          <NuxtLink to="/">Change donation</NuxtLink>
         </Button>
       </CardFooter>
     </Card>
   </div>
 </template>
-
-<style scoped>
-  .snap-embed-container {
-    width: 100%;
-    max-width: 28rem;
-    margin: 1.5rem 0;
-  }
-
-  .snap-embed-container :deep(iframe) {
-    width: 100% !important;
-    min-height: 600px;
-    border: none;
-  }
-</style>

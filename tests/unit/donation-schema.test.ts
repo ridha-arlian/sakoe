@@ -7,37 +7,56 @@ function accepted(input: unknown) {
   return result.value
 }
 
+const email = 'alice@example.com'
+
 describe('parseDonationInput', () => {
   it('accepts the minimum amount', () => {
-    expect(accepted({ amount: 10000 }).amount).toBe(10000)
+    expect(accepted({ amount: 10000, email }).amount).toBe(10000)
   })
 
   it('rejects 9999', () => {
-    expect(parseDonationInput({ amount: 9999 }).ok).toBe(false)
+    expect(parseDonationInput({ amount: 9999, email }).ok).toBe(false)
   })
 
   it('accepts numeric strings', () => {
-    expect(accepted({ amount: '25000' }).amount).toBe(25000)
+    expect(accepted({ amount: '25000', email }).amount).toBe(25000)
   })
 
   it('rejects floats, non-numeric strings and scientific notation', () => {
-    expect(parseDonationInput({ amount: 10000.5 }).ok).toBe(false)
-    expect(parseDonationInput({ amount: 'abc' }).ok).toBe(false)
-    expect(parseDonationInput({ amount: '1e9' }).ok).toBe(false)
+    expect(parseDonationInput({ amount: 10000.5, email }).ok).toBe(false)
+    expect(parseDonationInput({ amount: 'abc', email }).ok).toBe(false)
+    expect(parseDonationInput({ amount: '1e9', email }).ok).toBe(false)
   })
 
   it('rejects amounts above the maximum', () => {
-    expect(parseDonationInput({ amount: 1000000001 }).ok).toBe(false)
+    expect(parseDonationInput({ amount: 50000001, email }).ok).toBe(false)
+  })
+
+  it('accepts amounts up to the Tako maximum', () => {
+    expect(accepted({ amount: 50000000, email }).amount).toBe(50000000)
   })
 
   it('trims the name and nulls whitespace-only values', () => {
-    expect(accepted({ amount: 10000, donorName: '  Alice  ' }).donorName).toBe('Alice')
-    expect(accepted({ amount: 10000, donorName: '   ' }).donorName).toBeNull()
-    expect(accepted({ amount: 10000 }).donorName).toBeNull()
+    expect(accepted({ amount: 10000, email, donorName: '  Alice  ' }).donorName).toBe('Alice')
+    expect(accepted({ amount: 10000, email, donorName: '   ' }).donorName).toBeNull()
+    expect(accepted({ amount: 10000, email }).donorName).toBeNull()
   })
 
   it('rejects names over 50 characters and messages over 200', () => {
-    expect(parseDonationInput({ amount: 10000, donorName: 'a'.repeat(51) }).ok).toBe(false)
-    expect(parseDonationInput({ amount: 10000, message: 'a'.repeat(201) }).ok).toBe(false)
+    expect(parseDonationInput({ amount: 10000, email, donorName: 'a'.repeat(51) }).ok).toBe(false)
+    expect(parseDonationInput({ amount: 10000, email, message: 'a'.repeat(201) }).ok).toBe(false)
+  })
+
+  it('requires a valid email', () => {
+    expect(parseDonationInput({ amount: 10000 }).ok).toBe(false)
+    expect(parseDonationInput({ amount: 10000, email: '' }).ok).toBe(false)
+    expect(parseDonationInput({ amount: 10000, email: 'not-an-email' }).ok).toBe(false)
+    expect(accepted({ amount: 10000, email: '  alice@example.com  ' }).email).toBe('alice@example.com')
+  })
+
+  it('defaults the payment method to qris and rejects unknown methods', () => {
+    expect(accepted({ amount: 10000, email }).paymentMethod).toBe('qris')
+    expect(accepted({ amount: 10000, email, paymentMethod: 'gopay' }).paymentMethod).toBe('gopay')
+    expect(parseDonationInput({ amount: 10000, email, paymentMethod: 'ovo' }).ok).toBe(false)
   })
 })

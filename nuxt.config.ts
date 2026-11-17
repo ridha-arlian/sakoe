@@ -26,12 +26,12 @@ export default defineNuxtConfig({
       meta: [
         {
           name: 'description',
-          content: 'Support Sakoe with a quick, secure donation through Midtrans. Every contribution keeps the projects going.',
+          content: 'Support Sakoe with a quick, secure donation through Tako. Every contribution keeps the projects going.',
         },
         { property: 'og:type', content: 'website' },
         { name: 'twitter:card', content: 'summary_large_image' },
       ],
-      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/logo-S-kantong.svg' }],
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
     },
   },
   colorMode: {
@@ -61,11 +61,9 @@ export default defineNuxtConfig({
     ]
   },
   runtimeConfig: {
-    midtransServerKey: '',
-    midtransIsProduction: '',
-    public: {
-      midtransClientKey: '',
-      midtransSnapUrl: '',
-    },
+    takoApiKey: '',
+    takoCallbackSecret: '',
+    takoUsername: 'ridha_arlian',
+    takoUserAgent: 'Sakoe/1.0',
   },
 })

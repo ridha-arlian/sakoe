@@ -3,7 +3,7 @@
   import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
   import { Button } from "@/components/ui/button";
   import { Heart, ShieldCheck, Loader2 } from "@lucide/vue";
-  import { MIN_AMOUNT } from "~~/shared/donation";
+  import { DEFAULT_PAYMENT_METHOD, MIN_AMOUNT } from "~~/shared/donation";
   import AmountInput from "./AmountInput.vue";
   import AmountPresets from "./AmountPresets.vue";
   import DonorInfoForm from "./DonorInfoForm.vue";
@@ -27,6 +27,8 @@
       donorName: donorName.value,
       message: message.value,
       isAnonymous: isAnonymous.value,
+      email: "",
+      paymentMethod: DEFAULT_PAYMENT_METHOD,
     };
     saveDonationDraft(form.value);
 
@@ -66,7 +68,7 @@
 
       <p class="text-center text-[11px] text-muted-foreground flex items-center justify-center gap-1">
         <ShieldCheck class="w-3.5 h-3.5" />
-        Secure &amp; encrypted transaction via Midtrans
+        Secure payment via Tako
       </p>
     </CardFooter>
   </Card>

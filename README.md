@@ -1,13 +1,13 @@
 # Sakoe
 
-A single-page donation site. Visitors pick an amount, pay through Midtrans Snap, and see the transaction result. Donations are stored in Cloudflare D1 and the app runs on Cloudflare Workers.
+A single-page donation site. Visitors pick an amount, pay through Tako, and see the transaction result. Donations are stored in Cloudflare D1 and the app runs on Cloudflare Workers.
 
 ## Stack
 
 - Nuxt 4 (Vue 3, Vue Router 5, Vite 8)
 - Tailwind CSS 4 + shadcn-vue (reka-ui)
 - Cloudflare Workers (`cloudflare_module` preset) + D1
-- Midtrans Snap
+- Tako Gift API
 - Vitest
 
 ## Requirements
@@ -29,10 +29,12 @@ Required values:
 
 | Variable | Scope | Description |
 | --- | --- | --- |
-| `NUXT_MIDTRANS_SERVER_KEY` | server | Midtrans server key, used for Snap and signature checks |
-| `NUXT_MIDTRANS_IS_PRODUCTION` | server | `"true"` to hit the production Midtrans API |
-| `NUXT_PUBLIC_MIDTRANS_CLIENT_KEY` | public | Midtrans client key, loaded by `snap.js` |
-| `NUXT_PUBLIC_MIDTRANS_SNAP_URL` | public | Snap script URL, sandbox by default |
+| `NUXT_TAKO_API_KEY` | server | Tako API key used to create gifts and read their status |
+| `NUXT_TAKO_CALLBACK_SECRET` | server | Callback secret for the same API key, used to verify `X-Tako-Signature` |
+| `NUXT_TAKO_USERNAME` | server | Tako creator that receives the gifts (`ridha_arlian`) |
+| `NUXT_TAKO_USER_AGENT` | server | User-Agent sent to Tako, e.g. `Sakoe/1.0` |
+
+Tako has no sandbox. Creating a gift is free, but paying it moves real money. For local callbacks use a public HTTPS tunnel, and use a separate API key per environment because the callback and redirect URLs are configured per key.
 
 ## Commands
 
@@ -63,22 +65,27 @@ Local data is stored under `.wrangler/`.
 
 ```bash
 pnpm build
-wrangler secret put NUXT_MIDTRANS_SERVER_KEY
-wrangler secret put NUXT_MIDTRANS_IS_PRODUCTION
-wrangler secret put NUXT_PUBLIC_MIDTRANS_CLIENT_KEY
-wrangler secret put NUXT_PUBLIC_MIDTRANS_SNAP_URL
+wrangler secret put NUXT_TAKO_API_KEY
+wrangler secret put NUXT_TAKO_CALLBACK_SECRET
+wrangler secret put NUXT_TAKO_USERNAME
+wrangler secret put NUXT_TAKO_USER_AGENT
 pnpm deploy
 ```
 
-Set the Midtrans notification URL to `https://<your-domain>/api/notification`. In production the Snap client key and script URL must use the production values from the Midtrans dashboard.
+In the Tako API key settings, set:
+
+- Callback URL: `https://<your-domain>/api/tako/callback`
+- Redirect URL: `https://<your-domain>/status`
+- Callback Secret: same value as `NUXT_TAKO_CALLBACK_SECRET`
+- IP restriction: off (Cloudflare Workers does not have a fixed outbound IP)
 
 ## Project layout
 
 ```
 app/                Vue app (pages, components, composables, utils)
   components/ui/    shadcn-vue components
-server/api/         Nitro endpoints (donation, cancel, notification, status, stats)
-server/utils/       server helpers (D1 binding, Midtrans)
+server/api/         Nitro endpoints (donation, status, stats, Tako callback)
+server/utils/       server helpers (D1 binding, Tako)
 shared/             constants shared by app and server
 migrations/         D1 migrations
 tests/              Vitest tests

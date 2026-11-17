@@ -1,9 +1,12 @@
 import { z } from 'zod'
 import {
+  DEFAULT_PAYMENT_METHOD,
   MAX_AMOUNT,
+  MAX_EMAIL_LENGTH,
   MAX_MESSAGE_LENGTH,
   MAX_NAME_LENGTH,
   MIN_AMOUNT,
+  TAKO_PAYMENT_METHODS,
 } from '~~/shared/donation'
 
 const amountSchema = z
@@ -23,6 +26,8 @@ const textSchema = (max: number) =>
 
 export const donationInputSchema = z.object({
   amount: amountSchema,
+  email: z.string().trim().email().max(MAX_EMAIL_LENGTH),
+  paymentMethod: z.enum(TAKO_PAYMENT_METHODS).default(DEFAULT_PAYMENT_METHOD),
   donorName: textSchema(MAX_NAME_LENGTH),
   message: textSchema(MAX_MESSAGE_LENGTH),
   isAnonymous: z.boolean().default(false),

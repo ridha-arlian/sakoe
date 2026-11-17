@@ -3,7 +3,7 @@
   import { Button } from "@/components/ui/button";
   import { Plus, Minus } from "@lucide/vue";
   import { NumberField, NumberFieldContent, NumberFieldInput } from "@/components/ui/number-field";
-  import { MIN_AMOUNT } from "@/utils/donation";
+  import { MAX_AMOUNT, MIN_AMOUNT } from "~~/shared/donation";
   import { formatIDR } from "@/utils/currency";
 
   const amount = defineModel<number | undefined>({ required: true });
@@ -31,6 +31,7 @@
       class="w-full"
       locale="id-ID"
       :min="MIN_AMOUNT"
+      :max="MAX_AMOUNT"
       :step="1"
       :format-options="{
         style: 'currency',

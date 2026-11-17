@@ -71,7 +71,7 @@ export function useTransactionStatus(orderId: Ref<string>) {
     active = true;
 
     if (!orderId.value) {
-      errorMsg.value = "Order ID not found in URL.";
+      errorMsg.value = "Order ID not found.";
       isLoading.value = false;
       return;
     }
@@ -86,7 +86,7 @@ export function useTransactionStatus(orderId: Ref<string>) {
     pollAttempts = 0;
 
     if (!newId) {
-      errorMsg.value = "Order ID not found in URL.";
+      errorMsg.value = "Order ID not found.";
       isLoading.value = false;
       return;
     }

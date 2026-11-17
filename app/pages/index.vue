@@ -1,9 +1,9 @@
 <script setup lang="ts">
   useSeoMeta({
     title: "Sakoe | Fuel the Work",
-    description: "Support Sakoe with a quick, secure donation through Midtrans. Every contribution keeps the projects going.",
+    description: "Support Sakoe with a quick, secure donation through Tako. Every contribution keeps the projects going.",
     ogTitle: "Sakoe | Fuel the Work",
-    ogDescription: "Support Sakoe with a quick, secure donation through Midtrans. Every contribution keeps the projects going.",
+    ogDescription: "Support Sakoe with a quick, secure donation through Tako. Every contribution keeps the projects going.",
     ogImage: "/og-image.png",
   });
 </script>

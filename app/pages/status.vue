@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { AlertTriangle, CheckCircle2, Clock, XCircle } from "@lucide/vue";
+  import { AlertTriangle, CheckCircle2, Clock, RotateCcw, XCircle } from "@lucide/vue";
   import { toast } from "vue-sonner";
   import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
   import { Badge } from "@/components/ui/badge";
@@ -14,13 +14,14 @@
     failed: XCircle,
     expired: AlertTriangle,
     cancelled: XCircle,
+    refunded: RotateCcw,
   } satisfies Record<TxStatus, unknown>;
 
   const route = useRoute();
 
   useSeoMeta({ title: "Status | Sakoe", robots: "noindex, nofollow" });
 
-  const orderId = computed(() => (route.query.order_id as string) || "");
+  const orderId = computed(() => (route.query.order_id as string) || loadLastOrderId());
 
   const { isLoading, errorMsg, data, fetchStatus } = useTransactionStatus(orderId);
 
@@ -128,13 +129,18 @@
             </div>
           </div>
 
-          <Button
-            v-if="data.transactionStatus === 'pending'"
-            class="w-full mt-6"
-            @click="fetchStatus()"
-          >
-            {{ view.primaryLabel }}
-          </Button>
+          <div v-if="data.transactionStatus === 'pending'" class="w-full mt-6 flex flex-col gap-2">
+            <Button v-if="data.paymentUrl" as-child class="w-full">
+              <a :href="data.paymentUrl">Continue payment</a>
+            </Button>
+            <Button
+              :variant="data.paymentUrl ? 'outline' : 'default'"
+              class="w-full"
+              @click="fetchStatus()"
+            >
+              {{ view.primaryLabel }}
+            </Button>
+          </div>
           <Button v-else as-child class="w-full mt-6">
             <NuxtLink :to="view.primaryTo">{{ view.primaryLabel }}</NuxtLink>
           </Button>

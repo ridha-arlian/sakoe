@@ -5,11 +5,10 @@ export { AMOUNT_PRESETS, MIN_AMOUNT };
 export const TARGET_GOAL = 10_000_000;
 
 export const PAYMENT_TYPE_LABELS: Record<string, string> = {
-  gopay: "GoPay",
   qris: "QRIS",
-  bank_transfer: "Bank Transfer",
-  shopeepay: "ShopeePay",
-  credit_card: "Credit Card",
+  gopay: "GoPay",
+  dana: "DANA",
+  paypal: "PayPal",
 };
 
 export const STATUS_VIEW_CONFIG: Record<TxStatus, StatusViewConfig> = {
@@ -50,6 +49,14 @@ export const STATUS_VIEW_CONFIG: Record<TxStatus, StatusViewConfig> = {
     iconClass: "text-muted-foreground bg-muted",
     title: "Payment Cancelled",
     message: "You cancelled this transaction.",
+    primaryLabel: "Back to Home",
+    primaryTo: "/",
+  },
+  refunded: {
+    icon: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8",
+    iconClass: "text-muted-foreground bg-muted",
+    title: "Payment Refunded",
+    message: "This donation was returned to the sender.",
     primaryLabel: "Back to Home",
     primaryTo: "/",
   },

@@ -1,7 +1,7 @@
 export {};
 
 declare global {
-  type TxStatus = "paid" | "pending" | "failed" | "expired" | "cancelled";
+  type TxStatus = "paid" | "pending" | "failed" | "expired" | "cancelled" | "refunded";
 
   interface DonationStatus {
     orderId: string;
@@ -9,6 +9,7 @@ declare global {
     paymentType: string;
     amount: number;
     transactionTime: string;
+    paymentUrl: string | null;
   }
 
   interface StatusViewConfig {
