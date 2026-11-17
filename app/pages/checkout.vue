@@ -8,12 +8,14 @@
   import { Input } from "@/components/ui/input";
   import { Separator } from "@/components/ui/separator";
   import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+  import { cn } from "@/lib/utils";
   import {
     DEFAULT_PAYMENT_METHOD,
     isTakoPaymentMethod,
     MAX_EMAIL_LENGTH,
     MIN_AMOUNT,
     PAYMENT_METHOD_LABELS,
+    PAYMENT_METHOD_LOGOS,
     TAKO_PAYMENT_METHODS,
     type TakoPaymentMethod,
   } from "~~/shared/donation";
@@ -97,14 +99,16 @@
           <template v-if="message">
             <Separator />
             <div class="py-3">
-              <p class="text-sm text-foreground whitespace-pre-wrap break-words">{{ message }}</p>
+              <p class="text-sm text-foreground whitespace-pre-wrap wrap-break-word">{{ message }}</p>
             </div>
           </template>
         </div>
 
         <FieldGroup class="gap-4">
           <Field :data-invalid="showEmailError">
-            <FieldLabel for="email" class="text-[13px]">Email</FieldLabel>
+            <FieldLabel for="email" class="text-[13px]">
+              Email<span class="text-destructive" aria-hidden="true">*</span>
+            </FieldLabel>
             <Input
               id="email"
               v-model="email"
@@ -114,30 +118,39 @@
               placeholder="you@example.com"
               :maxlength="MAX_EMAIL_LENGTH"
               :aria-invalid="showEmailError"
+              aria-required="true"
+              required
               class="text-sm"
             />
             <FieldError v-if="showEmailError">Enter a valid email address.</FieldError>
             <FieldDescription v-else>
-              Used by Tako for the payment receipt. Your name can stay anonymous.
+              We'll send the invoice to this email after payment.
             </FieldDescription>
           </Field>
 
           <Field>
-            <FieldLabel class="text-[13px]">Payment method</FieldLabel>
+            <FieldLabel class="text-[13px]">Payment method:</FieldLabel>
             <ToggleGroup
               type="single"
               variant="outline"
+              :spacing="2"
               :model-value="paymentMethod"
-              class="grid w-full grid-cols-2"
+              class="grid w-full grid-cols-2 gap-2"
               @update:model-value="updatePaymentMethod"
             >
               <ToggleGroupItem
                 v-for="method in TAKO_PAYMENT_METHODS"
                 :key="method"
                 :value="method"
-                class="w-full justify-center"
+                :aria-label="PAYMENT_METHOD_LABELS[method]"
+                class="h-10 w-full justify-center px-0 data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary data-[state=on]:hover:bg-primary/10"
               >
-                {{ PAYMENT_METHOD_LABELS[method] }}
+                <img
+                  :src="PAYMENT_METHOD_LOGOS[method]"
+                  alt=""
+                  aria-hidden="true"
+                  :class="cn('h-5 w-auto', method === 'qris' && 'dark:invert')"
+                >
               </ToggleGroupItem>
             </ToggleGroup>
           </Field>

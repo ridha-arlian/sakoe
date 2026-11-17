@@ -25,6 +25,13 @@ export const PAYMENT_METHOD_LABELS: Record<TakoPaymentMethod, string> = {
   paypal: "PayPal",
 };
 
+export const PAYMENT_METHOD_LOGOS: Record<TakoPaymentMethod, string> = {
+  qris: "/qris.svg",
+  gopay: "/gopay.svg",
+  dana: "/dana.svg",
+  paypal: "/paypal.svg",
+};
+
 export const AMOUNT_PRESETS = [
   { label: "Rp 10k", value: 10_000 },
   { label: "Rp 25k", value: 25_000 },
