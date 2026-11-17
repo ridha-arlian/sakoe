@@ -1,6 +1,7 @@
 <script setup lang="ts">
-  import { AlertTriangle, CheckCircle2, Clock, RotateCcw, XCircle } from "@lucide/vue";
+  import { AlertTriangle, CheckCircle2, Clock, Loader2, RotateCcw, XCircle } from "@lucide/vue";
   import { toast } from "vue-sonner";
+  import { PAYMENT_METHOD_LABELS, type TakoPaymentMethod } from "~~/shared/donation";
   import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
   import { Badge } from "@/components/ui/badge";
   import { Button } from "@/components/ui/button";
@@ -23,11 +24,11 @@
 
   const orderId = computed(() => (route.query.order_id as string) || loadLastOrderId());
 
-  const { isLoading, errorMsg, data, fetchStatus } = useTransactionStatus(orderId);
+  const { isLoading, isRefreshing, errorMsg, data, fetchStatus } = useTransactionStatus(orderId);
 
   const paymentTypeLabel = computed(() => {
     if (!data.value?.paymentType) return "-";
-    return PAYMENT_TYPE_LABELS[data.value.paymentType] ?? data.value.paymentType;
+    return PAYMENT_METHOD_LABELS[data.value.paymentType as TakoPaymentMethod] ?? data.value.paymentType;
   });
 
   const formattedAmount = computed(() => {
@@ -136,9 +137,11 @@
             <Button
               :variant="data.paymentUrl ? 'outline' : 'default'"
               class="w-full"
-              @click="fetchStatus()"
+              :disabled="isRefreshing"
+              @click="fetchStatus(false, true)"
             >
-              {{ view.primaryLabel }}
+              <Loader2 v-if="isRefreshing" data-icon="inline-start" class="animate-spin" />
+              {{ isRefreshing ? "Checking..." : view.primaryLabel }}
             </Button>
           </div>
           <Button v-else as-child class="w-full mt-6">

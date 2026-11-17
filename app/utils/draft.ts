@@ -104,14 +104,6 @@ export function loadDonationDraft(): DonationFormState | null {
   return parseDraft(sessionStorage.getItem(DONATION_DRAFT_KEY))
 }
 
-export function clearDonationDraft(): void {
-  if (!import.meta.client) {
-    return
-  }
-
-  sessionStorage.removeItem(DONATION_DRAFT_KEY)
-}
-
 export function saveLastOrderId(orderId: string): void {
   if (!import.meta.client) {
     return

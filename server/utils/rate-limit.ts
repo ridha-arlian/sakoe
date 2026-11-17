@@ -1,4 +1,4 @@
-import { createError, getRequestIP } from 'h3'
+import { createError, getHeader, getRequestIP } from 'h3'
 import type { H3Event } from 'h3'
 
 export interface RateLimitBinding {
@@ -37,7 +37,10 @@ export async function assertWithinRateLimit(event: H3Event): Promise<void> {
   const binding =
     context.cloudflare?.env?.DONATION_LIMIT ??
     context._platform?.cloudflare?.env?.DONATION_LIMIT
-  const key = getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'
+  const key =
+    getHeader(event, 'cf-connecting-ip') ??
+    getRequestIP(event, { xForwardedFor: true }) ??
+    'unknown'
 
   await enforceRateLimit(binding, key)
 }

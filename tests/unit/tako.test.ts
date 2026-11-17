@@ -29,8 +29,11 @@ describe('mapTakoStatus', () => {
     expect(mapTakoStatus('on_hold')).toBe('pending')
   })
 
-  it('maps failed, reversed and refunded', () => {
+  it('maps failed, expired, cancelled, reversed and refunded', () => {
     expect(mapTakoStatus('failed')).toBe('failed')
+    expect(mapTakoStatus('expired')).toBe('expired')
+    expect(mapTakoStatus('cancelled')).toBe('cancelled')
+    expect(mapTakoStatus('canceled')).toBe('cancelled')
     expect(mapTakoStatus('reversed')).toBe('refunded')
     expect(mapTakoStatus('refunded')).toBe('refunded')
   })

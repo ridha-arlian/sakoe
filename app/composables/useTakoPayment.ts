@@ -34,6 +34,12 @@ export function useTakoPayment() {
         body: payload,
       })
 
+      if (!result?.paymentUrl) {
+        errorMsg.value = 'Tako did not return a payment link. Please try again.'
+        isRedirecting.value = false
+        return
+      }
+
       saveLastOrderId(result.orderId)
       window.location.assign(result.paymentUrl)
     } catch (err) {

@@ -6,14 +6,12 @@ declare global {
   interface DonationStatus {
     orderId: string;
     transactionStatus: TxStatus;
-    paymentType: string;
+    paymentType: string | null;
     amount: number;
-    transactionTime: string;
     paymentUrl: string | null;
   }
 
   interface StatusViewConfig {
-    icon: string;
     iconClass: string;
     title: string;
     message: string;

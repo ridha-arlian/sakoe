@@ -3,7 +3,7 @@
   import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
   import { Button } from "@/components/ui/button";
   import { Heart, ShieldCheck, Loader2 } from "@lucide/vue";
-  import { DEFAULT_PAYMENT_METHOD, MIN_AMOUNT } from "~~/shared/donation";
+  import { DEFAULT_PAYMENT_METHOD, MAX_AMOUNT, MIN_AMOUNT } from "~~/shared/donation";
   import AmountInput from "./AmountInput.vue";
   import AmountPresets from "./AmountPresets.vue";
   import DonorInfoForm from "./DonorInfoForm.vue";
@@ -14,7 +14,9 @@
   const isAnonymous = ref(false);
   const isLoading   = ref(false);
 
-  const isAmountValid = computed(() => amount.value !== undefined && amount.value >= MIN_AMOUNT);
+  const isAmountValid = computed(
+    () => amount.value !== undefined && amount.value >= MIN_AMOUNT && amount.value <= MAX_AMOUNT,
+  );
 
   async function handleDonate() {
     if (!isAmountValid.value || isLoading.value) return;

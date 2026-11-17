@@ -8,10 +8,21 @@
 
   const amount = defineModel<number | undefined>({ required: true });
 
-  const isAmountValid = computed(() => amount.value !== undefined && amount.value >= MIN_AMOUNT);
+  const amountError = computed(() => {
+    if (amount.value === undefined || amount.value < MIN_AMOUNT) {
+      return `Minimum ${formatIDR(MIN_AMOUNT)}`;
+    }
+
+    if (amount.value > MAX_AMOUNT) {
+      return `Maximum ${formatIDR(MAX_AMOUNT)}`;
+    }
+
+    return "";
+  });
 
   function increment100() {
-    amount.value = (amount.value || 0) + 100;
+    const next = (amount.value || 0) + 100;
+    amount.value = next <= MAX_AMOUNT ? next : MAX_AMOUNT;
   }
 
   function decrement100() {
@@ -47,6 +58,7 @@
           size="icon"
           class="size-9 shrink-0"
           :disabled="amount !== undefined && amount <= MIN_AMOUNT"
+          aria-label="Decrease amount"
           @click="decrement100"
         >
           <Minus />
@@ -62,6 +74,8 @@
           variant="outline"
           size="icon"
           class="size-9 shrink-0"
+          :disabled="amount !== undefined && amount >= MAX_AMOUNT"
+          aria-label="Increase amount"
           @click="increment100"
         >
           <Plus />
@@ -74,8 +88,8 @@
         Amount: <span class="font-semibold text-xs text-foreground">{{ formattedAmount }}</span>
       </p>
 
-      <p v-if="!isAmountValid" class="text-destructive font-medium text-[11px]">
-        Minimum Rp 10,000
+      <p v-if="amountError" class="text-destructive font-medium text-[11px]">
+        {{ amountError }}
       </p>
     </div>
   </div>

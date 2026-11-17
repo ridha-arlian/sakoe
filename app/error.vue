@@ -13,9 +13,6 @@
 
       <div class="flex flex-col gap-2 mt-6">
         <Button class="w-full" @click="clearError({ redirect: '/' })">
-          Try again
-        </Button>
-        <Button variant="outline" class="w-full" @click="clearError({ redirect: '/' })">
           Back to home
         </Button>
       </div>

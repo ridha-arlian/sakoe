@@ -88,6 +88,11 @@ export function mapTakoStatus(status: string): DbStatus | null {
       return 'pending'
     case 'failed':
       return 'failed'
+    case 'expired':
+      return 'expired'
+    case 'cancelled':
+    case 'canceled':
+      return 'cancelled'
     case 'reversed':
     case 'refunded':
       return 'refunded'

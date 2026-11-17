@@ -3,9 +3,6 @@ import crypto from 'node:crypto'
 interface TakoRequestError {
   statusCode?: number
   status?: number
-  data?: {
-    error?: { message?: string }
-  }
   message?: string
 }
 

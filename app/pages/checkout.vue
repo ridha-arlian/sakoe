@@ -9,7 +9,10 @@
   import { Separator } from "@/components/ui/separator";
   import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
   import {
+    DEFAULT_PAYMENT_METHOD,
     isTakoPaymentMethod,
+    MAX_EMAIL_LENGTH,
+    MIN_AMOUNT,
     PAYMENT_METHOD_LABELS,
     TAKO_PAYMENT_METHODS,
     type TakoPaymentMethod,
@@ -21,15 +24,15 @@
 
   useSeoMeta({ title: "Checkout | Sakoe", robots: "noindex, nofollow" });
 
-  const draft = form.value!;
+  const draft = form.value;
 
-  const amount = draft.amount;
-  const donorName = draft.donorName;
-  const message = draft.message;
-  const isAnonymous = draft.isAnonymous;
+  const amount = draft?.amount ?? MIN_AMOUNT;
+  const donorName = draft?.donorName ?? "";
+  const message = draft?.message ?? "";
+  const isAnonymous = draft?.isAnonymous ?? false;
 
-  const email = ref(draft.email);
-  const paymentMethod = ref<TakoPaymentMethod>(draft.paymentMethod);
+  const email = ref(draft?.email ?? "");
+  const paymentMethod = ref<TakoPaymentMethod>(draft?.paymentMethod ?? DEFAULT_PAYMENT_METHOD);
 
   const formattedAmount = computed(() => formatIDR(amount));
   const displayName = computed(() => (isAnonymous ? "Anonymous" : donorName || "Anonymous"));
@@ -57,7 +60,7 @@
   }
 
   async function handlePay() {
-    if (!isEmailValid.value || isRedirecting.value) return;
+    if (!form.value || !isEmailValid.value || isRedirecting.value) return;
 
     persistDraft();
 
@@ -109,7 +112,7 @@
               inputmode="email"
               autocomplete="email"
               placeholder="you@example.com"
-              :maxlength="254"
+              :maxlength="MAX_EMAIL_LENGTH"
               :aria-invalid="showEmailError"
               class="text-sm"
             />

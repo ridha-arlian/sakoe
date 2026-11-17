@@ -4,7 +4,7 @@ interface StatsResponse {
 }
 
 export function useStatsPolling(intervalMs = 20000) {
-  const { data, pending, refresh } = useAsyncData(
+  const { data, refresh } = useAsyncData(
     "stats",
     () => $fetch<StatsResponse>("/api/stats"),
     {
@@ -21,17 +21,25 @@ export function useStatsPolling(intervalMs = 20000) {
     }
   }
 
-  function handleVisibility() {
-    if (document.visibilityState === "visible") refresh();
-  }
-
-  onMounted(() => {
+  function startPolling() {
     stopPolling();
-    refresh();
     interval = setInterval(() => {
       if (document.visibilityState === "visible") refresh();
     }, intervalMs);
+  }
 
+  function handleVisibility() {
+    if (document.visibilityState === "visible") {
+      refresh();
+      startPolling();
+      return;
+    }
+
+    stopPolling();
+  }
+
+  onMounted(() => {
+    startPolling();
     document.addEventListener("visibilitychange", handleVisibility);
   });
 
@@ -40,5 +48,5 @@ export function useStatsPolling(intervalMs = 20000) {
     document.removeEventListener("visibilitychange", handleVisibility);
   });
 
-  return { data, pending, refresh };
+  return { data, refresh };
 }

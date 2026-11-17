@@ -1,10 +1,9 @@
 <script setup lang="ts">
   useSeoMeta({
-    title: "Sakoe | Fuel the Work",
-    description: "Support Sakoe with a quick, secure donation through Tako. Every contribution keeps the projects going.",
     ogTitle: "Sakoe | Fuel the Work",
     ogDescription: "Support Sakoe with a quick, secure donation through Tako. Every contribution keeps the projects going.",
-    ogImage: "/og-image.png",
+    ogImage: "/logo.svg",
+    ogImageAlt: "Sakoe",
   });
 </script>
 

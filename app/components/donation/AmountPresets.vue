@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { Button } from "@/components/ui/button";
-  import { AMOUNT_PRESETS } from "@/utils/donation";
+  import { AMOUNT_PRESETS } from "~~/shared/donation";
 
   const amount = defineModel<number | undefined>({ required: true });
 
