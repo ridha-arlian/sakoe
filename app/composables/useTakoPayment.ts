@@ -19,6 +19,36 @@ interface CreateGiftResponse {
 export function useTakoPayment() {
   const isRedirecting = ref(false)
   const errorMsg = ref('')
+  let handledReturn = false
+
+  /**
+   * Restored from bfcache after the user cancelled on Tako: the component never
+   * remounts, so the redirect state would stay stuck forever. Reset it and send
+   * the user to the status page instead of leaving a dead "Redirecting..." button.
+   */
+  function handlePageShow() {
+    if (!isRedirecting.value) {
+      return
+    }
+
+    isRedirecting.value = false
+
+    // Only bounce once, so going back from /status to checkout still works.
+    if (handledReturn) {
+      return
+    }
+
+    handledReturn = true
+    navigateTo('/status')
+  }
+
+  onMounted(() => {
+    window.addEventListener('pageshow', handlePageShow)
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener('pageshow', handlePageShow)
+  })
 
   async function startPayment(payload: TakoDonationPayload) {
     if (isRedirecting.value) {
@@ -27,6 +57,7 @@ export function useTakoPayment() {
 
     isRedirecting.value = true
     errorMsg.value = ''
+    handledReturn = false
 
     try {
       const result = await $fetch<CreateGiftResponse>('/api/donation', {
