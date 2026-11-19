@@ -33,7 +33,7 @@ export const STATUS_VIEW_CONFIG: Record<TxStatus, StatusViewConfig> = {
     iconClass: "text-muted-foreground bg-muted",
     title: "Payment Cancelled",
     message: "You cancelled this transaction.",
-    primaryLabel: "Back to Home",
+    primaryLabel: "Change donation",
     primaryTo: "/",
   },
   refunded: {

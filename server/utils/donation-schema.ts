@@ -31,6 +31,7 @@ export const donationInputSchema = z.object({
   donorName: textSchema(MAX_NAME_LENGTH),
   message: textSchema(MAX_MESSAGE_LENGTH),
   isAnonymous: z.boolean().default(false),
+  previousOrderId: z.string().trim().regex(/^sakoe-[0-9a-f]{12}$/).optional(),
 })
 
 export type DonationInput = z.output<typeof donationInputSchema>

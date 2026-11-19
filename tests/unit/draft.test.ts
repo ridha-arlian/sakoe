@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseDraft, serializeDraft } from '@/utils/draft'
+import { isRecentOrder, parseDraft, parseRedirectFlag, serializeDraft } from '@/utils/draft'
 
 const draft = {
   amount: 25000,
@@ -46,5 +46,42 @@ describe('draft serialization', () => {
 
   it('serializes null as null', () => {
     expect(serializeDraft(null)).toBeNull()
+  })
+})
+
+describe('isRecentOrder', () => {
+  const now = 1_000_000_000
+
+  it('accepts orders inside the window', () => {
+    expect(isRecentOrder(now - 1000, 60_000, now)).toBe(true)
+  })
+
+  it('rejects orders past the window', () => {
+    expect(isRecentOrder(now - 61_000, 60_000, now)).toBe(false)
+  })
+
+  it('rejects missing or corrupt timestamps', () => {
+    expect(isRecentOrder(0, 60_000, now)).toBe(false)
+    expect(isRecentOrder(Number.NaN, 60_000, now)).toBe(false)
+    expect(isRecentOrder(-1, 60_000, now)).toBe(false)
+  })
+})
+
+describe('parseRedirectFlag', () => {
+  it('reads a stored flag', () => {
+    expect(parseRedirectFlag(JSON.stringify({ orderId: 'sakoe-0123456789ab', at: 123 }))).toEqual({
+      orderId: 'sakoe-0123456789ab',
+      at: 123,
+    })
+  })
+
+  it('rejects empty, corrupt or incomplete flags', () => {
+    expect(parseRedirectFlag(null)).toBeNull()
+    expect(parseRedirectFlag('')).toBeNull()
+    expect(parseRedirectFlag('{')).toBeNull()
+    expect(parseRedirectFlag(JSON.stringify({ at: 123 }))).toBeNull()
+    expect(parseRedirectFlag(JSON.stringify({ orderId: '', at: 123 }))).toBeNull()
+    expect(parseRedirectFlag(JSON.stringify({ orderId: 'sakoe-0123456789ab' }))).toBeNull()
+    expect(parseRedirectFlag(JSON.stringify({ orderId: 'sakoe-0123456789ab', at: 'now' }))).toBeNull()
   })
 })

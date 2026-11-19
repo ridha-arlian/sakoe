@@ -22,7 +22,7 @@
 
   const form = useDonationForm();
 
-  definePageMeta({ middleware: "donation-draft", ssr: false });
+  definePageMeta({ middleware: ["donation-draft", "payment-return"], ssr: false });
 
   useSeoMeta({ title: "Checkout | Sakoe", robots: "noindex, nofollow" });
 

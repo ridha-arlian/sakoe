@@ -72,6 +72,48 @@ export default defineEventHandler(async (event) => {
   const orderId = `sakoe-${crypto.randomBytes(6).toString('hex')}`
   const now = Date.now()
 
+  // Starting a new gift replaces the previous unfinished one, so abandoned
+  // orders stop piling up as `pending` rows. Check Tako first: a missed callback
+  // must not turn a paid donation into a cancelled one.
+  if (donation.previousOrderId) {
+    const previous = await db.prepare(
+      `SELECT tako_gift_id, status FROM donations WHERE order_id = ?`
+    ).bind(donation.previousOrderId).first<{ tako_gift_id: string | null; status: string }>()
+
+    if (previous?.status === 'pending') {
+      let nextStatus = 'cancelled'
+
+      if (previous.tako_gift_id && config.takoApiKey) {
+        try {
+          const gift = await getTakoGift(
+            { apiKey: config.takoApiKey, userAgent: config.takoUserAgent },
+            previous.tako_gift_id,
+          )
+
+          if (mapTakoStatus(gift.status) === 'paid') {
+            nextStatus = 'paid'
+          }
+        } catch {
+          // Tako status is best-effort; fall back to cancelling the stale order.
+        }
+      }
+
+      const cancelledAt = Date.now()
+
+      if (nextStatus === 'paid') {
+        await db.prepare(
+          `UPDATE donations SET status = 'paid', paid_at = COALESCE(paid_at, ?), updated_at = ?
+           WHERE order_id = ? AND status = 'pending'`
+        ).bind(cancelledAt, cancelledAt, donation.previousOrderId).run()
+      } else {
+        await db.prepare(
+          `UPDATE donations SET status = 'cancelled', updated_at = ?
+           WHERE order_id = ? AND status = 'pending'`
+        ).bind(cancelledAt, donation.previousOrderId).run()
+      }
+    }
+  }
+
   await db.prepare(
     `INSERT INTO donations (id, order_id, amount, donor_name, is_anonymous, message, payment_method, status, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`

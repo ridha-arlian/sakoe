@@ -20,4 +20,15 @@ describe('enforceRateLimit', () => {
       statusCode: 429,
     })
   })
+
+  it('uses the provided message when the binding refuses', async () => {
+    const limit = vi.fn().mockResolvedValue({ success: false })
+
+    await expect(
+      enforceRateLimit({ limit }, '1.2.3.4', 'Too many status checks.'),
+    ).rejects.toMatchObject({
+      statusCode: 429,
+      statusMessage: 'Too many status checks.',
+    })
+  })
 })

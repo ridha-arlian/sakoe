@@ -13,6 +13,8 @@ interface DonationRow {
 const TAKO_STATUS_TTL_MS = 5_000
 
 export default defineEventHandler(async (event) => {
+  await assertWithinStatusRateLimit(event)
+
   const query = getQuery(event)
   const orderId = query.order_id as string
   const forceRefresh = query.refresh === '1'

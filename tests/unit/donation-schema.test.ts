@@ -59,4 +59,12 @@ describe('parseDonationInput', () => {
     expect(accepted({ amount: 10000, email, paymentMethod: 'gopay' }).paymentMethod).toBe('gopay')
     expect(parseDonationInput({ amount: 10000, email, paymentMethod: 'ovo' }).ok).toBe(false)
   })
+
+  it('accepts only well-formed previous order ids', () => {
+    expect(accepted({ amount: 10000, email, previousOrderId: 'sakoe-0123456789ab' }).previousOrderId)
+      .toBe('sakoe-0123456789ab')
+    expect(accepted({ amount: 10000, email }).previousOrderId).toBeUndefined()
+    expect(parseDonationInput({ amount: 10000, email, previousOrderId: 'sakoe-xyz' }).ok).toBe(false)
+    expect(parseDonationInput({ amount: 10000, email, previousOrderId: "sakoe-0123456789ab' OR 1=1" }).ok).toBe(false)
+  })
 })

@@ -7,6 +7,7 @@ export interface RateLimitBinding {
 
 interface CloudflareEnv {
   DONATION_LIMIT?: RateLimitBinding
+  STATUS_LIMIT?: RateLimitBinding
 }
 
 interface CloudflareContext {
@@ -14,9 +15,27 @@ interface CloudflareContext {
   _platform?: { cloudflare?: { env?: CloudflareEnv } }
 }
 
+function rateLimitBinding(event: H3Event, name: keyof CloudflareEnv): RateLimitBinding | undefined {
+  const context = event.context as unknown as CloudflareContext
+
+  return (
+    context.cloudflare?.env?.[name] ??
+    context._platform?.cloudflare?.env?.[name]
+  )
+}
+
+function rateLimitKey(event: H3Event): string {
+  return (
+    getHeader(event, 'cf-connecting-ip') ??
+    getRequestIP(event, { xForwardedFor: true }) ??
+    'unknown'
+  )
+}
+
 export async function enforceRateLimit(
   binding: RateLimitBinding | undefined,
   key: string,
+  message = 'Too many donations from this address. Please try again in a minute.',
 ): Promise<void> {
   if (!binding) {
     return
@@ -27,20 +46,19 @@ export async function enforceRateLimit(
   if (!success) {
     throw createError({
       statusCode: 429,
-      statusMessage: 'Too many donations from this address. Please try again in a minute.',
+      statusMessage: message,
     })
   }
 }
 
 export async function assertWithinRateLimit(event: H3Event): Promise<void> {
-  const context = event.context as unknown as CloudflareContext
-  const binding =
-    context.cloudflare?.env?.DONATION_LIMIT ??
-    context._platform?.cloudflare?.env?.DONATION_LIMIT
-  const key =
-    getHeader(event, 'cf-connecting-ip') ??
-    getRequestIP(event, { xForwardedFor: true }) ??
-    'unknown'
+  await enforceRateLimit(rateLimitBinding(event, 'DONATION_LIMIT'), rateLimitKey(event))
+}
 
-  await enforceRateLimit(binding, key)
+export async function assertWithinStatusRateLimit(event: H3Event): Promise<void> {
+  await enforceRateLimit(
+    rateLimitBinding(event, 'STATUS_LIMIT'),
+    rateLimitKey(event),
+    'Too many status checks from this address. Please try again in a minute.',
+  )
 }

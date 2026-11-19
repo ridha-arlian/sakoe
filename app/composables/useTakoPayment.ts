@@ -1,5 +1,6 @@
 import type { TakoPaymentMethod } from '~~/shared/donation'
-import { saveLastOrderId } from '@/utils/draft'
+import { loadLastOrderId, saveLastOrderId, saveRedirectFlag } from '@/utils/draft'
+import { clearReturnHandled } from '@/utils/payment-return'
 
 export interface TakoDonationPayload {
   amount: number
@@ -8,6 +9,7 @@ export interface TakoDonationPayload {
   isAnonymous: boolean
   email: string
   paymentMethod: TakoPaymentMethod
+  previousOrderId?: string
 }
 
 interface CreateGiftResponse {
@@ -16,30 +18,24 @@ interface CreateGiftResponse {
   paymentUrl: string
 }
 
+const REDIRECT_TIMEOUT_MS = 15_000
+
 export function useTakoPayment() {
   const isRedirecting = ref(false)
   const errorMsg = ref('')
-  let handledReturn = false
 
   /**
-   * Restored from bfcache after the user cancelled on Tako: the component never
-   * remounts, so the redirect state would stay stuck forever. Reset it and send
-   * the user to the status page instead of leaving a dead "Redirecting..." button.
+   * Restored from bfcache after leaving for Tako: the component never remounts,
+   * so the redirect state would stay stuck forever. Send the user to the return
+   * page, which owns the resume/retry UI.
    */
-  function handlePageShow() {
+  async function handlePageShow() {
     if (!isRedirecting.value) {
       return
     }
 
     isRedirecting.value = false
-
-    // Only bounce once, so going back from /status to checkout still works.
-    if (handledReturn) {
-      return
-    }
-
-    handledReturn = true
-    navigateTo('/status')
+    await navigateTo('/payment-incomplete', { replace: true })
   }
 
   onMounted(() => {
@@ -57,12 +53,16 @@ export function useTakoPayment() {
 
     isRedirecting.value = true
     errorMsg.value = ''
-    handledReturn = false
 
     try {
+      const previousOrderId = payload.previousOrderId ?? loadLastOrderId()
+
       const result = await $fetch<CreateGiftResponse>('/api/donation', {
         method: 'POST',
-        body: payload,
+        body: {
+          ...payload,
+          ...(previousOrderId ? { previousOrderId } : {}),
+        },
       })
 
       if (!result?.paymentUrl) {
@@ -72,7 +72,14 @@ export function useTakoPayment() {
       }
 
       saveLastOrderId(result.orderId)
+      saveRedirectFlag(result.orderId)
+      clearReturnHandled()
       window.location.assign(result.paymentUrl)
+
+      // Safety net for browsers that keep the page alive when navigation fails.
+      window.setTimeout(() => {
+        isRedirecting.value = false
+      }, REDIRECT_TIMEOUT_MS)
     } catch (err) {
       const error = err as { data?: { statusMessage?: string }; message?: string }
       errorMsg.value =

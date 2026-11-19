@@ -8,6 +8,8 @@
   import { Card, CardContent } from "@/components/ui/card";
   import { Separator } from "@/components/ui/separator";
   import { Skeleton } from "@/components/ui/skeleton";
+  import { clearRedirectFlag } from "@/utils/draft";
+  import { markReturnHandled } from "@/utils/payment-return";
 
   const STATUS_ICONS = {
     paid: CheckCircle2,
@@ -19,6 +21,11 @@
   } satisfies Record<TxStatus, unknown>;
 
   const route = useRoute();
+
+  onMounted(() => {
+    clearRedirectFlag();
+    markReturnHandled();
+  });
 
   useSeoMeta({ title: "Status | Sakoe", robots: "noindex, nofollow" });
 
@@ -143,10 +150,15 @@
               <Loader2 v-if="isRefreshing" data-icon="inline-start" class="animate-spin" />
               {{ isRefreshing ? "Checking..." : view.primaryLabel }}
             </Button>
+            <Button variant="ghost" size="sm" as-child class="w-full">
+              <NuxtLink to="/">Change donation</NuxtLink>
+            </Button>
           </div>
-          <Button v-else as-child class="w-full mt-6">
-            <NuxtLink :to="view.primaryTo">{{ view.primaryLabel }}</NuxtLink>
-          </Button>
+          <template v-else>
+            <Button as-child class="w-full mt-6">
+              <NuxtLink :to="view.primaryTo">{{ view.primaryLabel }}</NuxtLink>
+            </Button>
+          </template>
         </div>
 
         <div v-else class="py-6">
